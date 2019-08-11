@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ListView?>
+<?import javafx.scene.control.Tab?>
+<?import javafx.scene.control.TabPane?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
+<BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="600.0" prefWidth="750.0" xmlns="http://javafx.com/javafx/1.8_211" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.savagellc.raven.gui.controller.MainViewController">
+   <left>
+      <BorderPane prefHeight="200.0" prefWidth="200.0" BorderPane.alignment="CENTER">
+         <bottom>
+            <VBox prefHeight="36.0" prefWidth="200.0" BorderPane.alignment="CENTER">
+               <children>
+                  <Label fx:id="nameLabel" prefHeight="17.0" prefWidth="202.0" style="-fx-font-weight: bold;" text="Label" />
+               </children></VBox>
+         </bottom>
+         <center>
+            <TabPane prefHeight="200.0" prefWidth="200.0" tabClosingPolicy="UNAVAILABLE" BorderPane.alignment="CENTER">
+              <tabs>
+                <Tab text="DM">
+                     <content>
+                        <ListView fx:id="dmChannelsList" prefHeight="200.0" prefWidth="200.0" />
+                     </content>
+                </Tab>
+                  <Tab fx:id="serverTab" text="Servers">
+                      <content>
+                          <ListView fx:id="serversList" prefHeight="200.0" prefWidth="200.0" />
+                      </content>
+                  </Tab>
+              </tabs>
+            </TabPane>
+         </center>
+      </BorderPane>
+   </left>
+   <center>
+      <BorderPane fx:id="viewerBorderPane" prefHeight="200.0" prefWidth="200.0" BorderPane.alignment="CENTER">
+         <bottom>
+            <HBox prefHeight="35.0" prefWidth="400.0" BorderPane.alignment="CENTER">
+               <children>
+                  <TextField fx:id="sendMessageTextField" prefHeight="40.0" prefWidth="406.0" HBox.hgrow="ALWAYS" />
+               </children>
+            </HBox>
+         </bottom>
+         <center>
+            <ListView fx:id="messagesList" prefHeight="400.0" prefWidth="381.0" BorderPane.alignment="CENTER" />
+         </center>
+      </BorderPane>
+   </center>
+</BorderPane>

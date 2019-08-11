@@ -1,5 +1,6 @@
 package com.savagellc.raven.include
 
+import com.savagellc.raven.core.CoreManager
 import org.json.JSONArray
 import org.json.JSONObject
 import java.util.*
@@ -10,14 +11,14 @@ open class Channel(val rootObject:JSONObject) {
     var hasLoadedAll = false
     var loaded = false
 
-    fun populateDataFromArray(data: JSONArray) {
+    fun populateDataFromArray(data: JSONArray, coreManager: CoreManager) {
         messages.clear()
         loaded = true
         data.reversed().forEach {
             it as JSONObject
             messages.add(
                 GuiMessage(
-                    it
+                    it, coreManager, this
                 )
             )
         }

@@ -1,6 +1,8 @@
 package com.savagellc.raven.gui.renders
 
+import com.savagellc.raven.core.CoreManager
 import com.savagellc.raven.discord.ImageCache
+import com.savagellc.raven.gui.MessageMenu
 import com.savagellc.raven.include.GuiMessage
 import javafx.application.Platform
 import javafx.concurrent.Task
@@ -9,11 +11,11 @@ import javafx.geometry.Insets
 import javafx.scene.control.Label
 import javafx.scene.control.ListView
 import javafx.scene.image.ImageView
+import javafx.scene.input.MouseButton
 import javafx.scene.layout.HBox
 import javafx.scene.layout.Priority
 import javafx.scene.layout.VBox
 import org.json.JSONObject
-import java.util.concurrent.Executors
 
 const val maxImageWidth = 750.0
 
@@ -49,9 +51,13 @@ private fun addUserImage(
 }
 fun render(
     message: GuiMessage,
-    messagesList: ListView<HBox>
-): HBox {
+    messagesList: ListView<HBox>,
+    coreManager: CoreManager
+): Triple<HBox, Label, VBox> {
     val rootBox = HBox()
+    rootBox.setOnMouseClicked {
+            MessageMenu.openMenu(message, it.screenX, it.screenY, coreManager, messagesList, it.button == MouseButton.SECONDARY)
+    }
     rootBox.maxWidth = maxImageWidth
     val contentRow = VBox()
     contentRow.padding = Insets(2.0, 0.0, 2.0, 5.0)
@@ -67,8 +73,8 @@ fun render(
     HBox.setHgrow(contentRow, Priority.ALWAYS)
     val nameLabel = getLabel(message.senderName, "-fx-font-size: 16;")
     contentRow.children.add(nameLabel)
-    if(message.content != "") {
         val contentLabel = getLabel(message.content, "-fx-font-size: 15;")
+    if(message.content != "") {
         contentRow.children.add(contentLabel)
     }
     if(message.type == 3) {
@@ -143,5 +149,5 @@ fun render(
     }
     rootBox.children.add(contentRow)
 
-    return rootBox
+    return Triple(rootBox, contentLabel, contentRow)
 }

@@ -1,18 +1,26 @@
 package com.savagellc.raven.discord
 
+import okhttp3.Headers
+import okhttp3.MediaType
 import org.json.JSONArray
 import org.json.JSONObject
 import java.awt.image.BufferedImage
 import java.net.URL
 import javax.imageio.ImageIO
 import javax.net.ssl.HttpsURLConnection
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
+import okhttp3.MediaType.Companion.toMediaType
+
+
 
 
 data class Response(
     val code: Int,
     val hasData: Boolean,
     val respMessage: String,
-    val headers: MutableMap<String, MutableList<String>>,
+    val headers: Headers,
     val data: String
 )
 
@@ -31,9 +39,10 @@ object ImageCache {
         return saved[url]
     }
 }
-
 class Api(private val token: String) {
     val webSocket = RavenWebSocket(token)
+    val client = OkHttpClient()
+
 
     init {
         webSocket.connect()
@@ -44,29 +53,19 @@ class Api(private val token: String) {
         method: String = "GET",
         data: String? = null
     ): Response {
-        val connection = URL("https://discordapp.com/api$path").openConnection() as HttpsURLConnection
-        connection.requestMethod = method
-        if (method != "GET") connection.setRequestProperty("Content-type", contentType)
-        connection.setRequestProperty("Accept", "*/*")
-        connection.addRequestProperty("Authorization", token)
-        connection.setRequestProperty(
-            "User-agent",
-            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3770.145 Safari/537.36 Vivaldi/2.6.1566.49"
-        )
-        connection.doInput = true
-        connection.doOutput = true
-        connection.connect()
-        if (data != null) {
-            connection.outputStream.write(data.toByteArray())
-        }
-        val code = connection.responseCode
-        val message = connection.responseMessage
+        val request = Request.Builder()
+            .url("https://discordapp.com/api$path")
+            .addHeader("User-agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3770.145 Safari/537.36 Vivaldi/2.6.1566.49")
+            .addHeader("Authorization", token)
+            .method(method, data?.toRequestBody(contentType.toMediaType()))
+            .build()
+            val resp = client.newCall(request).execute()
         return Response(
-            code,
-            code == 200,
-            message,
-            connection.headerFields,
-            connection.inputStream.bufferedReader().use { it.readText() })
+            resp.code,
+            resp.code == 200,
+            resp.message,
+            resp.headers,
+            resp.body!!.string())
     }
 
     fun getDmChannels(): JSONArray {
@@ -90,6 +89,9 @@ class Api(private val token: String) {
     fun getMessages(channelId: String): JSONArray {
         val response = request("/channels/$channelId/messages")
         return JSONArray(response.data)
+    }
+    fun editMessage(channelId: String, messageId:String, content: String): Response {
+        return request("/channels/$channelId/messages/$messageId", method = "PATCH", data = JSONObject().put("content", content).toString())
     }
     fun getMessages(channelId: String, before: String): JSONArray {
         val response = request("/channels/$channelId/messages?before=$before")

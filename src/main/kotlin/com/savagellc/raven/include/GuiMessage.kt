@@ -1,6 +1,7 @@
 package com.savagellc.raven.include
 
 import com.savagellc.raven.core.CoreManager
+import com.savagellc.raven.gui.OpenTab
 import com.savagellc.raven.gui.renders.render
 import javafx.application.Platform
 import javafx.scene.control.Label
@@ -14,8 +15,9 @@ import org.json.JSONObject
 class GuiMessage(
     val rootObj: JSONObject,
     val coreManager: CoreManager,
-    val channel: Channel
+    val guiObject: OpenTab
 ) {
+    val channel = guiObject.channel
     val id = rootObj.getString("id")
     val author = rootObj.getJSONObject("author")
     val senderId = author.getString("id")
@@ -29,25 +31,23 @@ class GuiMessage(
     var isEditMode = false
     fun pushContentUpdate(updatedContent:String) {
         content = updatedContent
+        val thRef = hBox
       Platform.runLater {
-          hBox.second.text = updatedContent
+          thRef.second.text = updatedContent
       }
     }
     fun pushRemove() {
         coreManager.messageIndex.remove(id)
         channel.messages.remove(this)
-        if(coreManager.activeChat == channel) {
-            Platform.runLater {
-                coreManager.guiManager.controller.messagesList.items.remove(hBox.first)
-                coreManager.guiManager.controller.messagesList.refresh()
-            }
-        }
-    }
 
-    init {
-        coreManager.messageIndex[id] = this
+            Platform.runLater {
+                guiObject.controller.messagesList.items.remove(hBox.first)
+                    guiObject.controller.messagesList.refresh()
+            }
+
     }
     fun editMode() {
+        println(this.hBox)
         if(!isEditMode) {
             isEditMode = true
             Platform.runLater {
@@ -82,6 +82,7 @@ class GuiMessage(
     }
     fun getRendered(messagesList: ListView<HBox>): HBox {
         hBox = render(this, messagesList, coreManager)
+        coreManager.messageIndex[this.id] = this
         return hBox.first
     }
 }

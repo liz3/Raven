@@ -4,8 +4,12 @@ import com.savagellc.raven.Data
 import com.savagellc.raven.discord.Api
 import com.savagellc.raven.discord.ChannelType
 import com.savagellc.raven.gui.Manager
+import com.savagellc.raven.gui.OpenTab
+import com.savagellc.raven.gui.Prompts
 import com.savagellc.raven.include.*
 import javafx.application.Platform
+import javafx.scene.control.Alert
+import org.json.JSONArray
 import org.json.JSONObject
 import java.util.*
 import kotlin.collections.HashMap
@@ -16,19 +20,19 @@ class CoreManager(val guiManager: Manager) {
     val chats = Vector<PrivateChat>()
     val servers = Vector<Server>()
     val messageIndex = HashMap<String, GuiMessage>()
-    lateinit var activeChat: Channel
     lateinit var activeServer: Server
 
     init {
         api.webSocket.addEventListener("MESSAGE_CREATE") { json ->
             val id = json.getString("channel_id")
-            if (activeChat.id == id) {
+            if(guiManager.openChats.containsKey(id)) {
+                val activeChat = guiManager.openChats[id]!!
                 val message = GuiMessage(json, this, activeChat)
-                activeChat.messages.add(message)
-                guiManager.appendMessage(message)
-                if (activeChat is PrivateChat) {
+                activeChat.channel.messages.add(message)
+                activeChat.appendMessage(message)
+                if (activeChat.channel is PrivateChat) {
                     guiManager.moving = true
-                    val obj = (activeChat as PrivateChat).guiObj
+                    val obj = activeChat.channel.guiObj
                     Platform.runLater {
                         guiManager.controller.dmChannelsList.items.remove(obj)
                         Platform.runLater {
@@ -51,7 +55,7 @@ class CoreManager(val guiManager: Manager) {
                     }
                 }
                 if (it.id == id && it.loaded) {
-                    val message = GuiMessage(json, this, it)
+                    val message = GuiMessage(json, this, it.guiReference)
                     it.messages.add(message)
                     return@addEventListener
                 }
@@ -59,7 +63,7 @@ class CoreManager(val guiManager: Manager) {
             servers.forEach { srv ->
                 srv.channels.forEach {
                     if (it.loaded && it.id == id) {
-                        val message = GuiMessage(json, this, it)
+                        val message = GuiMessage(json, this, it.guiReference)
                         it.messages.add(message)
                         return@addEventListener
                     }
@@ -70,7 +74,9 @@ class CoreManager(val guiManager: Manager) {
             Thread {
                 val id = json.getString("id")
                 if (messageIndex.containsKey(id)) {
-                    messageIndex[id]!!.pushContentUpdate(json.getString("content"))
+                    val saved = messageIndex[id]
+
+                  saved!!.pushContentUpdate(json.getString("content"))
                 }
 
             }.start()
@@ -144,17 +150,17 @@ class CoreManager(val guiManager: Manager) {
         }.start()
     }
 
-    fun loadOlderMessages() {
-        if (activeChat.hasLoadedAll) return
+    fun loadOlderMessages(channel: Channel, tab:OpenTab) {
+        if (channel.hasLoadedAll) return
         Thread {
-            val firstId = activeChat.messages[0].id
+            val firstId = channel.messages[0].id
             val messages =
-                api.getMessages(activeChat.id, firstId).map { GuiMessage(it as JSONObject, this, activeChat) }
-            if (messages.isEmpty()) activeChat.hasLoadedAll = true;
+                api.getMessages(channel.id, firstId).map { GuiMessage(it as JSONObject, this, tab) }
+            if (messages.isEmpty()) channel.hasLoadedAll = true;
             messages.forEach {
-                activeChat.messages.add(0, it)
+                channel.messages.add(0, it)
             }
-            guiManager.prepend(messages)
+            tab.prepend(messages)
         }.start()
     }
 
@@ -165,17 +171,16 @@ class CoreManager(val guiManager: Manager) {
         }.start()
     }
 
-    fun sendMessage(message: String, cb: (GuiMessage) -> Unit) {
-        if (this::activeChat.isInitialized) {
+    fun sendMessage(message: String, channel: OpenTab, cb: (GuiMessage) -> Unit) {
             Thread {
-                val sendObj = JSONObject(api.sendSimpleMessage(activeChat.id, message).data)
+                val sendObj = JSONObject(api.sendSimpleMessage(channel.channel.id, message).data)
                 val messageObj = GuiMessage(
-                    sendObj, this, activeChat
+                    sendObj, this, channel
                 )
                 cb(messageObj)
             }.start()
         }
-    }
+
 
     fun loadServerChannels(server: Server, cb: () -> Unit) {
         if (server.loadedChannels) {
@@ -216,11 +221,18 @@ class CoreManager(val guiManager: Manager) {
         }.start()
     }
 
-    fun initChat(channel: Channel, callback: () -> Unit) {
-        activeChat = channel
+    fun initChat(channel: Channel, callback: (Boolean) -> Unit) {
         Thread {
-            if (!channel.loaded) channel.populateDataFromArray(api.getMessages(channel.id), this)
-            callback()
+            val response = api.getMessages(channel.id)
+            if(response.hasData) {
+                if (!channel.loaded) channel.populateDataFromArray(JSONArray(response.data), this)
+                callback(true)
+            } else {
+                Platform.runLater {
+                    callback(false)
+                    Prompts.infoCheck("Failed to load Channel", "Cant load channel", "Failed to retrieve messages (${response.code} ${response.respMessage})", Alert.AlertType.ERROR)
+                }
+            }
         }.start()
     }
 }

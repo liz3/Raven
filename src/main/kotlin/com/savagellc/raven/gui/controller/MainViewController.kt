@@ -27,14 +27,11 @@ class MainViewController {
     lateinit var serverTab:Tab
 
     @FXML
-    lateinit var sendMessageTextField: TextField
-
-    @FXML
-    lateinit var messagesList: ListView<HBox>
-
-    @FXML
     lateinit var statusComboBox: ComboBox<OnlineStatus>
 
     @FXML
     lateinit var joinBtn:Button
+
+    @FXML
+    lateinit var openChatsTabView:TabPane
 }

@@ -13,13 +13,13 @@ import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.MediaType.Companion.toMediaType
 
-enum class RelationStatus(val n:Int) {
+enum class RelationStatus(val n: Int) {
     FRIENDS(1),
     INCOMING(3),
     OUTGOING(4)
 }
 
-enum class ChannelType(val num:Int) {
+enum class ChannelType(val num: Int) {
     GUILD_TEXT(0),
     DM(1),
     GUILD_VOICE(2),
@@ -30,7 +30,7 @@ enum class ChannelType(val num:Int) {
 }
 
 //277767292404891648
-enum class OnlineStatus(val value:String, private val fName: String) {
+enum class OnlineStatus(val value: String, private val fName: String) {
     IDLE("idle", "Idle"),
     DO_NOT_DISTURB("dnd", "Do not disturb"),
     OFFLINE("invisible", "Invisible"),
@@ -51,8 +51,8 @@ data class Response(
 
 object ImageCache {
     val saved = HashMap<String, BufferedImage>()
-    fun getImage(url:String): BufferedImage? {
-        if(saved.containsKey(url)) return saved[url]
+    fun getImage(url: String): BufferedImage? {
+        if (saved.containsKey(url)) return saved[url]
         val connection = URL(url).openConnection() as HttpsURLConnection
         connection.doOutput = true
         connection.setRequestProperty(
@@ -65,53 +65,64 @@ object ImageCache {
     }
 }
 
-class Api(private val token: String, holdConnect:Boolean = false) {
+class Api(private val token: String, holdConnect: Boolean = false) {
     val webSocket = RavenWebSocket(token)
     val client = OkHttpClient()
 
 
     init {
-        if(!holdConnect)
-        webSocket.connect()
+        if (!holdConnect)
+            webSocket.connect()
     }
+
     private fun request(
         path: String,
         contentType: String = "application/json",
         method: String = "GET",
         data: String? = null,
-        withoutToken:Boolean = false
+        withoutToken: Boolean = false
     ): Response {
 
-        val request = if(withoutToken) Request.Builder()
+        val request = if (withoutToken) Request.Builder()
             .url("https://discordapp.com/api$path")
-            .addHeader("User-agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3770.145 Safari/537.36 Vivaldi/2.6.1566.49")
+            .addHeader(
+                "User-agent",
+                "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3770.145 Safari/537.36 Vivaldi/2.6.1566.49"
+            )
             .method(method, data?.toRequestBody(contentType.toMediaType()))
             .build()
         else
             Request.Builder()
-            .url("https://discordapp.com/api$path")
-            .addHeader("User-agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3770.145 Safari/537.36 Vivaldi/2.6.1566.49")
-            .addHeader("Authorization", token)
-            .method(method, data?.toRequestBody(contentType.toMediaType()))
-            .build()
-            val resp = client.newCall(request).execute()
+                .url("https://discordapp.com/api$path")
+                .addHeader(
+                    "User-agent",
+                    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3770.145 Safari/537.36 Vivaldi/2.6.1566.49"
+                )
+                .addHeader("Authorization", token)
+                .method(method, data?.toRequestBody(contentType.toMediaType()))
+                .build()
+        val resp = client.newCall(request).execute()
+        val b = resp.body!!.string()
         return Response(
             resp.code,
             resp.code == 200,
-            resp.message,
+           b,
             resp.headers,
-            resp.body!!.string())
+            b
+        )
     }
 
     fun getDmChannels(): JSONArray {
         val response = request("/users/@me/channels")
         return JSONArray(response.data)
     }
+
     fun getGuilds(): JSONArray {
         val response = request("/users/@me/guilds")
         return JSONArray(response.data)
     }
-    fun getGuildChannels(id:String): JSONArray {
+
+    fun getGuildChannels(id: String): JSONArray {
         val response = request("/guilds/$id/channels")
         return JSONArray(response.data)
     }
@@ -120,50 +131,73 @@ class Api(private val token: String, holdConnect:Boolean = false) {
         val response = request("/users/@me")
         return JSONObject(response.data)
     }
-    fun login(email:String, password:String): JSONObject {
+
+    fun login(email: String, password: String): JSONObject {
         val obj = JSONObject().put("email", email).put("password", password).put("undelete", false)
         return JSONObject(request("/v6/auth/login", data = obj.toString(), method = "POST", withoutToken = true).data)
     }
-    fun getMessages(channelId: String): JSONArray {
-        val response = request("/channels/$channelId/messages")
-        return JSONArray(response.data)
+
+    fun getMessages(channelId: String): Response {
+        return request("/channels/$channelId/messages")
+
     }
-    fun editMessage(channelId: String, messageId:String, content: String): Response {
-        return request("/channels/$channelId/messages/$messageId", method = "PATCH", data = JSONObject().put("content", content).toString())
+
+    fun editMessage(channelId: String, messageId: String, content: String): Response {
+        return request(
+            "/channels/$channelId/messages/$messageId",
+            method = "PATCH",
+            data = JSONObject().put("content", content).toString()
+        )
     }
-    fun deleteMessage(channelId: String, messageId:String): Response {
+
+    fun deleteMessage(channelId: String, messageId: String): Response {
         return request("/channels/$channelId/messages/$messageId", method = "DELETE")
     }
-    fun createDm(target:String): Response {
-        return request("/users/@me/channels", method = "POST", data = JSONObject().put("recipient_id", target).toString())
+
+    fun createDm(target: String): Response {
+        return request(
+            "/users/@me/channels",
+            method = "POST",
+            data = JSONObject().put("recipient_id", target).toString()
+        )
     }
-    fun sendRequest(targetId:String): Response {
+
+    fun sendRequest(targetId: String): Response {
         return request("/users/@me/relationships/$targetId", method = "PUT")
     }
-    fun removeFriend(targetId:String): Response {
+
+    fun removeFriend(targetId: String): Response {
         return request("/users/@me/relationships/$targetId", method = "DELETE")
     }
+
     fun getFrieends(): Response {
         return request("/users/@me/relationships")
     }
-    fun leaveServer(id:String): Response {
+
+    fun leaveServer(id: String): Response {
         return request("/users/@me/guilds/$id", method = "DELETE")
     }
+
     fun getMessages(channelId: String, before: String): JSONArray {
         val response = request("/channels/$channelId/messages?before=$before")
         return JSONArray(response.data)
     }
-    fun acceptInvite(id:String): Response {
+
+    fun acceptInvite(id: String): Response {
         return request("/invites/$id", method = "POST", data = "")
     }
-    fun updateSettings(obj:JSONObject): Response {
+
+    fun updateSettings(obj: JSONObject): Response {
         return request("/users/@me/settings", method = "PATCH", data = obj.toString())
     }
+
     fun updateOnlineStatus(status: OnlineStatus) {
-        val obj = JSONObject().put("status", status.value).put("since", 0).put("activities", JSONArray()).put("afk", false)
+        val obj =
+            JSONObject().put("status", status.value).put("since", 0).put("activities", JSONArray()).put("afk", false)
         webSocket.sendMessage(OpCode.STATUS_UPDATE, obj)
         updateSettings(JSONObject().put("status", status.value))
     }
+
     fun sendSimpleMessage(channelId: String, message: String): Response {
         val obj = JSONObject()
         obj.put("content", message)

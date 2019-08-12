@@ -1,6 +1,7 @@
 package com.savagellc.raven.include
 
 import com.savagellc.raven.core.CoreManager
+import com.savagellc.raven.gui.OpenTab
 import org.json.JSONArray
 import org.json.JSONObject
 import java.util.*
@@ -10,6 +11,7 @@ open class Channel(val rootObject:JSONObject) {
     val messages = Vector<GuiMessage>()
     var hasLoadedAll = false
     var loaded = false
+    lateinit var guiReference: OpenTab
 
     fun populateDataFromArray(data: JSONArray, coreManager: CoreManager) {
         messages.clear()
@@ -18,7 +20,7 @@ open class Channel(val rootObject:JSONObject) {
             it as JSONObject
             messages.add(
                 GuiMessage(
-                    it, coreManager, this
+                    it, coreManager, guiReference
                 )
             )
         }

@@ -6,7 +6,6 @@
 <?import javafx.scene.control.ListView?>
 <?import javafx.scene.control.Tab?>
 <?import javafx.scene.control.TabPane?>
-<?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
@@ -46,17 +45,8 @@
       </BorderPane>
    </left>
    <center>
-      <BorderPane fx:id="viewerBorderPane" prefHeight="200.0" prefWidth="200.0" BorderPane.alignment="CENTER">
-         <bottom>
-            <HBox prefHeight="35.0" prefWidth="400.0" BorderPane.alignment="CENTER">
-               <children>
-                  <TextField fx:id="sendMessageTextField" prefHeight="40.0" prefWidth="406.0" HBox.hgrow="ALWAYS" />
-               </children>
-            </HBox>
-         </bottom>
-         <center>
-            <ListView fx:id="messagesList" prefHeight="400.0" prefWidth="381.0" BorderPane.alignment="CENTER" />
-         </center>
-      </BorderPane>
+   </center>
+   <center>
+      <TabPane fx:id="openChatsTabView" prefHeight="200.0" prefWidth="200.0" tabClosingPolicy="UNAVAILABLE" BorderPane.alignment="CENTER" />
    </center>
 </BorderPane>

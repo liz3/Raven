@@ -5,6 +5,7 @@ import com.savagellc.raven.core.CoreManager
 import com.savagellc.raven.discord.Api
 import com.savagellc.raven.discord.ChannelType
 import com.savagellc.raven.discord.OnlineStatus
+import com.savagellc.raven.gui.controller.ChannelViewController
 import com.savagellc.raven.gui.controller.MainViewController
 import com.savagellc.raven.include.*
 import com.savagellc.raven.utils.readFile
@@ -13,25 +14,114 @@ import javafx.application.Application
 import javafx.application.Platform
 import javafx.fxml.FXMLLoader
 import javafx.scene.Scene
+import javafx.scene.control.Tab
 import javafx.scene.control.TreeItem
 import javafx.scene.control.TreeView
 import javafx.scene.control.skin.VirtualFlow
 import javafx.scene.input.KeyCode
 import javafx.scene.input.MouseButton
+import javafx.scene.layout.AnchorPane
 import javafx.scene.layout.BorderPane
 import javafx.stage.Stage
 import java.io.File
 
+class OpenTab(
+    val coreManager: CoreManager,
+    val channel: Channel,
+    val controller: ChannelViewController,
+    val guiTab: Tab
+) {
+
+    var lastPos = 0.0
+    var loading = false
+
+    init {
+        channel.guiReference = this
+        Platform.runLater {
+            setupGuiEvents()
+            loadChat()
+        }
+    }
+
+    private fun setupGuiEvents() {
+        controller.sendMessageTextField.setOnKeyPressed {
+            if (it.code == KeyCode.ENTER) {
+                coreManager.sendMessage(controller.sendMessageTextField.text, this) {
+                    Platform.runLater {
+                        controller.sendMessageTextField.text = "";
+                    }
+                }
+            }
+        }
+    }
+
+    private fun registerScrollListener() {
+        (controller.messagesList.childrenUnmodifiable[0] as VirtualFlow<*>).positionProperty()
+            .addListener() { _, _, newVal ->
+                if (loading) return@addListener
+                loading = true
+                if (lastPos > 0 && newVal.toDouble() == 0.0) {
+                    lastPos = 0.0
+                    println("loading older messages")
+                    coreManager.loadOlderMessages(channel, this)
+                } else {
+                    Platform.runLater {
+                        loading = false
+                    }
+                }
+                lastPos = newVal.toDouble()
+            }
+    }
+
+    private fun getScroll() = (controller.messagesList.childrenUnmodifiable[0] as VirtualFlow<*>).position
+    private fun loadChat() {
+        if (loading) return
+        loading = true
+        coreManager.initChat(channel) { succ ->
+            if (!succ) {
+                loading = false
+                return@initChat
+            }
+            Platform.runLater {
+                controller.messagesList.items.clear()
+                controller.messagesList.items.addAll(channel.messages.map { it.getRendered(controller.messagesList) })
+                controller.messagesList.scrollTo(channel.messages.size - 1)
+                Platform.runLater {
+                    registerScrollListener()
+                    lastPos = getScroll()
+                    loading = false
+                }
+            }
+        }
+    }
+
+    fun appendMessage(msg: GuiMessage) {
+        Platform.runLater {
+            val rendered = msg.getRendered(controller.messagesList)
+            controller.messagesList.items.add(rendered)
+
+        }
+    }
+
+    fun prepend(messages: List<GuiMessage>) {
+        val first = controller.messagesList.items.first()
+        Platform.runLater {
+            controller.messagesList.items.addAll(0, messages.reversed().map { it.getRendered(controller.messagesList) })
+            Platform.runLater {
+                controller.messagesList.scrollTo(first)
+                loading = false
+            }
+        }
+    }
+}
 
 class Manager(val stage: Stage) {
     lateinit var coreManager: CoreManager
     lateinit var controller: MainViewController
-    var lastPos = 0.0
     var serverDisplayMode = false
     val treeView = TreeView<Any>()
-    var loading = false
     var moving = false
-
+    val openChats = HashMap<String, OpenTab>()
 
     private fun launchGui() {
         coreManager = CoreManager(this)
@@ -49,46 +139,42 @@ class Manager(val stage: Stage) {
         initialLoad()
     }
 
-    fun appendMessage(msg: GuiMessage) {
-        Platform.runLater {
-            controller.messagesList.items.add(msg.getRendered(controller.messagesList))
-        }
-    }
-
     fun addDmChat(chat: PrivateChat) {
         Platform.runLater {
             controller.dmChannelsList.items.add(chat.guiObj)
         }
     }
 
-    fun getScroll() = (controller.messagesList.childrenUnmodifiable[0] as VirtualFlow<*>).position
-    fun loadChat(privateChat: Channel) {
-        if (loading) return
-        loading = true
-        coreManager.initChat(privateChat) {
+    fun loadChat(channel: Channel) {
+        if (openChats.containsKey(channel.id)) {
             Platform.runLater {
-                controller.messagesList.items.clear()
-                controller.messagesList.items.addAll(privateChat.messages.map { it.getRendered(controller.messagesList) })
-                controller.messagesList.scrollTo(privateChat.messages.size - 1)
-                Platform.runLater {
-                    lastPos = getScroll()
-                    loading = false
-                }
+                controller.openChatsTabView.selectionModel.select(openChats[channel.id]!!.guiTab)
             }
+            return
+        }
+        val loader = FXMLLoader()
+        val pane = loader.load<BorderPane>(javaClass.getResourceAsStream("/fxml/ChatView.fxml"))
+        val controller = loader.getController<ChannelViewController>()
+        Platform.runLater {
+            val tab =
+                Tab(if (channel is PrivateChat) channel.guiObj.toString() else (channel as ServerChannel).guiObj.toString())
+            val obj = OpenTab(coreManager, channel, controller, tab)
+            tab.setOnClosed {
+                openChats.remove(channel.id)
+            }
+            openChats[channel.id] = obj
+            val rPane = AnchorPane()
+            rPane.children.add(pane)
+            AnchorPane.setTopAnchor(pane, 0.0)
+            AnchorPane.setLeftAnchor(pane, 0.0)
+            AnchorPane.setRightAnchor(pane, 0.0)
+            AnchorPane.setBottomAnchor(pane, 0.0)
+            tab.content = rPane;
+            this.controller.openChatsTabView.tabs.add(tab)
         }
     }
 
-    fun prepend(messages: List<GuiMessage>) {
-        val first = controller.messagesList.items.first()
-        Platform.runLater {
-            controller.messagesList.items.addAll(0, messages.reversed().map { it.getRendered(controller.messagesList) })
-            Platform.runLater {
-                lastPos = getScroll()
-                controller.messagesList.scrollTo(first)
-            }
-        }
-    }
-    fun renderServerChannels(server:Server): TreeItem<Any> {
+    fun renderServerChannels(server: Server): TreeItem<Any> {
         val root = TreeItem<Any>("<- Back to server list")
         root.isExpanded = true
         server.channels.filter { th -> th.type == ChannelType.GUILD_TEXT.num && (th.obj.isNull("parent_id")) }
@@ -111,6 +197,7 @@ class Manager(val stage: Stage) {
 
         return root
     }
+
     fun setupGuiEvents() {
         controller.statusComboBox.items.addAll(OnlineStatus.values())
         controller.statusComboBox.selectionModel.select(OnlineStatus.ONLINE)
@@ -119,26 +206,6 @@ class Manager(val stage: Stage) {
             Thread {
                 coreManager.api.updateOnlineStatus(newValue)
             }.start()
-        }
-        controller.messagesList.setOnScrollFinished {
-            if (lastPos > 0 && getScroll() == 0.0) {
-                println("Loading older messages")
-                coreManager.loadOlderMessages()
-            }
-            lastPos = getScroll()
-        }
-        controller.dmChannelsList.selectionModel.selectedItemProperty().addListener { observable, oldValue, newValue ->
-            if (moving) return@addListener
-            loadChat(newValue.privateChat)
-        }
-        controller.sendMessageTextField.setOnKeyPressed {
-            if (it.code == KeyCode.ENTER) {
-                coreManager.sendMessage(controller.sendMessageTextField.text) {
-                    Platform.runLater {
-                        controller.sendMessageTextField.text = "";
-                    }
-                }
-            }
         }
         treeView.setOnMouseClicked {
             if (treeView.selectionModel.selectedItem != null) {
@@ -182,6 +249,10 @@ class Manager(val stage: Stage) {
                     )
                 }
             }
+        }
+        controller.dmChannelsList.selectionModel.selectedItemProperty().addListener { observable, oldValue, newValue ->
+            if (moving) return@addListener
+            loadChat(newValue.privateChat)
         }
         controller.joinBtn.setOnAction {
             val text = Prompts.textPrompt("Enter Link", "Enter Discord Invite link")

@@ -25,7 +25,7 @@ class GuiMessage(
     val attachments = rootObj.getJSONArray("attachments")
     val embeds = rootObj.getJSONArray("embeds")
     private lateinit var hBox: Triple<HBox, Label, VBox>
-    private lateinit var editorField:TextField
+    private lateinit var editorField: TextField
     var isEditMode = false
     fun pushContentUpdate(updatedContent:String) {
         content = updatedContent

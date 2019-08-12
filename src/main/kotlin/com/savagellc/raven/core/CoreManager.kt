@@ -23,6 +23,13 @@ class CoreManager(val guiManager: Manager) {
                 val message = GuiMessage(json, this, activeChat)
                 activeChat.messages.add(message)
                 guiManager.appendMessage(message)
+                if(activeChat is PrivateChat) {
+                    val obj = (activeChat as PrivateChat).guiObj
+                    Platform.runLater {
+                        guiManager.controller.dmChannelsList.items.remove(obj)
+                        guiManager.controller.dmChannelsList.items.add(0, obj)
+                    }
+                }
                 return@addEventListener
             }
             chats.forEach {
@@ -124,6 +131,7 @@ class CoreManager(val guiManager: Manager) {
             api.getGuildChannels(server.id).forEach {
                 server.channels.add(ServerChannel(it as JSONObject))
             }
+            server.loadedChannels = true
             cb()
         }.start()
     }

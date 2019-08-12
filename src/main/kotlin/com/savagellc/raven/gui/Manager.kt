@@ -1,8 +1,13 @@
 package com.savagellc.raven.gui
 
+import com.savagellc.raven.Data
 import com.savagellc.raven.core.CoreManager
+import com.savagellc.raven.discord.Api
+import com.savagellc.raven.discord.OnlineStatus
 import com.savagellc.raven.gui.controller.MainViewController
 import com.savagellc.raven.include.*
+import com.savagellc.raven.utils.readFile
+import com.savagellc.raven.utils.writeFile
 import com.sun.javafx.scene.control.skin.VirtualFlow
 import javafx.application.Application
 import javafx.application.Platform
@@ -11,8 +16,10 @@ import javafx.scene.Scene
 import javafx.scene.control.TreeItem
 import javafx.scene.control.TreeView
 import javafx.scene.input.KeyCode
+import javafx.scene.input.MouseButton
 import javafx.scene.layout.BorderPane
 import javafx.stage.Stage
+import java.io.File
 
 
 class Manager(val stage: Stage) {
@@ -42,6 +49,11 @@ class Manager(val stage: Stage) {
             controller.messagesList.items.add(msg.getRendered(controller.messagesList))
         }
     }
+    fun addDmChat(chat:PrivateChat) {
+        Platform.runLater {
+            controller.dmChannelsList.items.add(chat.guiObj)
+        }
+    }
     fun getScroll() =  (controller.messagesList.childrenUnmodifiable[0] as VirtualFlow<*>).position
     fun loadChat(privateChat: Channel) {
         if(loading) return
@@ -69,6 +81,14 @@ class Manager(val stage: Stage) {
         }
     }
     fun setupGuiEvents() {
+        controller.statusComboBox.items.addAll(OnlineStatus.values())
+        controller.statusComboBox.selectionModel.select(OnlineStatus.ONLINE)
+        controller.statusComboBox.selectionModel.selectedItemProperty().addListener { observable, oldValue, newValue ->
+            println(newValue)
+            Thread{
+                coreManager.api.updateOnlineStatus(newValue)
+            }.start()
+        }
         controller.messagesList.setOnScrollFinished {
            if(lastPos > 0 && getScroll() == 0.0) {
                println("Loading older messages")
@@ -110,7 +130,7 @@ class Manager(val stage: Stage) {
                    val server = controller.serversList.selectionModel.selectedItem
                    coreManager.loadServerChannels(server) {
                       Platform.runLater {
-                          val root = TreeItem<Any>("Root")
+                          val root = TreeItem<Any>("<- Back to server list")
                           server.channels.filter {th -> th.type == 4 }.sortedBy { x -> x.obj.getInt("position") }.forEach {ch->
                               val item = TreeItem<Any>(ch.guiObj)
                               server.channels.filter { cCh -> cCh.obj.has("parent_id") && cCh.obj.get("parent_id") is String && cCh.obj.get("parent_id") == ch.id }.forEach {cCh ->
@@ -125,7 +145,19 @@ class Manager(val stage: Stage) {
                       }
                    }
                }
+            } else {
+                if(controller.serversList.selectionModel.selectedItem != null) {
+                    val server = controller.serversList.selectionModel.selectedItem
+                    ServerMenu.openMenu(server, it.screenX, it.screenY, coreManager, controller.serversList, it.button == MouseButton.SECONDARY)
+                }
             }
+        }
+        controller.joinBtn.setOnAction {
+            val text = Prompts.textPrompt("Enter Link", "Enter Discord Invite link")
+            val id = if(text.contains("discord.gg")) text.split("discord.gg/")[1] else text
+            Thread {
+                coreManager.api.acceptInvite(id)
+            }.start()
         }
     }
 
@@ -141,7 +173,23 @@ class Manager(val stage: Stage) {
         }.start()
     }
     fun start() {
-        launchGui()
+        val dir = File(System.getProperty("user.nome"), ".raven")
+        if(!dir.exists()) dir.mkdir()
+        val file = File(dir, "tkn-f")
+        if(file.exists()) {
+           Data.token = readFile(file).second
+            launchGui()
+        } else {
+            val userName = Prompts.textPrompt("Email", "Enter Email Address")
+            val password = Prompts.passPrompt()
+            val data = Api("", true).login(userName, password)
+            if(data.has("token")) {
+                val token = data.getString("token")
+                writeFile(token.toByteArray(), file, false, true)
+                Data.token = token
+                launchGui()
+            }
+        }
     }
 }
 

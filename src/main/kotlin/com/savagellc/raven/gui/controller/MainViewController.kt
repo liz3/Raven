@@ -1,12 +1,10 @@
 package com.savagellc.raven.gui.controller
 
+import com.savagellc.raven.discord.OnlineStatus
 import com.savagellc.raven.include.GuiDmChannel
 import com.savagellc.raven.include.Server
 import javafx.fxml.FXML
-import javafx.scene.control.Label
-import javafx.scene.control.ListView
-import javafx.scene.control.Tab
-import javafx.scene.control.TextField
+import javafx.scene.control.*
 import javafx.scene.layout.BorderPane
 import javafx.scene.layout.HBox
 
@@ -33,4 +31,10 @@ class MainViewController {
 
     @FXML
     lateinit var messagesList: ListView<HBox>
+
+    @FXML
+    lateinit var statusComboBox: ComboBox<OnlineStatus>
+
+    @FXML
+    lateinit var joinBtn:Button
 }

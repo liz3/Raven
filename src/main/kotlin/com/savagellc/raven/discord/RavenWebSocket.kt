@@ -43,7 +43,7 @@ class RavenWebSocket(val token: String) {
     fun addEventListener(name:String, cb: (JSONObject) -> Unit) {
         eventListeners.add(Pair(name, cb))
     }
-    private fun sendMessage(code: OpCode, data: Any?) {
+     fun sendMessage(code: OpCode, data: Any?) {
         val obj = JSONObject()
         obj.put("op", code.num)
         obj.put("d", data)

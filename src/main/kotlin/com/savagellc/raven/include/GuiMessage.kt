@@ -21,13 +21,32 @@ class GuiMessage(
     val senderId = author.getString("id")
     val type = rootObj.getInt("type")
     val senderName = author.getString("username")
-    val content: String = rootObj.getString("content")
+    var content = rootObj.getString("content")
     val attachments = rootObj.getJSONArray("attachments")
     val embeds = rootObj.getJSONArray("embeds")
     private lateinit var hBox: Triple<HBox, Label, VBox>
     private lateinit var editorField:TextField
     var isEditMode = false
+    fun pushContentUpdate(updatedContent:String) {
+        content = updatedContent
+      Platform.runLater {
+          hBox.second.text = updatedContent
+      }
+    }
+    fun pushRemove() {
+        coreManager.messageIndex.remove(id)
+        channel.messages.remove(this)
+        if(coreManager.activeChat == channel) {
+            Platform.runLater {
+                coreManager.guiManager.controller.messagesList.items.remove(hBox.first)
+                coreManager.guiManager.controller.messagesList.refresh()
+            }
+        }
+    }
 
+    init {
+        coreManager.messageIndex[id] = this
+    }
     fun editMode() {
         if(!isEditMode) {
             isEditMode = true
@@ -56,7 +75,7 @@ class GuiMessage(
         }
     }
     fun deleteMessage() {
-
+        coreManager.deleteMessage(this, channel.id) {}
     }
     override fun toString(): String {
         return "$senderName> $content"

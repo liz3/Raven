@@ -2,7 +2,7 @@
 This is a free software alternative discord client.
 
 # ATTENTION
-This could be referenced as `Self-botting` and is suspect to vialation of Discords ToS **USE AT OWN RISK**, no binaries will be provided.
+This could be referenced as `Self-botting` and is suspect to violation of Discords ToS **USE AT OWN RISK**, no binaries will be provided.
 
 ## Running locally 
 ### Prerequisites

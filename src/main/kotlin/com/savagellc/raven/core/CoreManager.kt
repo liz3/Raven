@@ -36,6 +36,13 @@ class CoreManager(val guiManager: Manager) {
                 if (it.id == id && it.loaded) {
                     val message = GuiMessage(json, this, it)
                     it.messages.add(message)
+                    if(activeChat is PrivateChat) {
+                        val obj = (activeChat as PrivateChat).guiObj
+                        Platform.runLater {
+                            guiManager.controller.dmChannelsList.items.remove(obj)
+                            guiManager.controller.dmChannelsList.items.add(0, obj)
+                        }
+                    }
                     return@addEventListener
                 }
             }

@@ -110,8 +110,6 @@ class CoreManager(val guiManager: Manager) {
                 val messageObj = GuiMessage(
                     sendObj, this, activeChat
                 )
-
-                activeChat.messages.add(messageObj)
                 cb(messageObj)
             }.start()
         }

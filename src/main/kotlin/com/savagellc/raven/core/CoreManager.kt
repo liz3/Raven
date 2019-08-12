@@ -28,6 +28,7 @@ class CoreManager(val guiManager: Manager) {
                     Platform.runLater {
                         guiManager.controller.dmChannelsList.items.remove(obj)
                         guiManager.controller.dmChannelsList.items.add(0, obj)
+                        guiManager.controller.dmChannelsList.selectionModel.select(obj)
                     }
                 }
                 return@addEventListener

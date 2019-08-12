@@ -47,6 +47,6 @@
    <center>
    </center>
    <center>
-      <TabPane fx:id="openChatsTabView" prefHeight="200.0" prefWidth="200.0" tabClosingPolicy="UNAVAILABLE" BorderPane.alignment="CENTER" />
+      <TabPane fx:id="openChatsTabView" prefHeight="200.0" prefWidth="200.0" tabClosingPolicy="ALL_TABS" BorderPane.alignment="CENTER" />
    </center>
 </BorderPane>

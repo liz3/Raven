@@ -171,6 +171,7 @@ class Manager(val stage: Stage) {
             AnchorPane.setBottomAnchor(pane, 0.0)
             tab.content = rPane;
             this.controller.openChatsTabView.tabs.add(tab)
+            this.controller.openChatsTabView.selectionModel.select(tab)
         }
     }
 
@@ -263,7 +264,7 @@ class Manager(val stage: Stage) {
         }
     }
 
-    fun initialLoad() {
+    private fun initialLoad() {
         Thread {
             coreManager.initLoad()
             Platform.runLater {

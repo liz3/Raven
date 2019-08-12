@@ -173,7 +173,7 @@ class Manager(val stage: Stage) {
         }.start()
     }
     fun start() {
-        val dir = File(System.getProperty("user.nome"), ".raven")
+        val dir = File(System.getProperty("user.home"), ".raven")
         if(!dir.exists()) dir.mkdir()
         val file = File(dir, "tkn-f")
         if(file.exists()) {

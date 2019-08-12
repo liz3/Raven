@@ -3,6 +3,7 @@ package com.savagellc.raven.gui
 import com.savagellc.raven.Data
 import com.savagellc.raven.core.CoreManager
 import com.savagellc.raven.discord.Api
+import com.savagellc.raven.discord.ChannelType
 import com.savagellc.raven.discord.OnlineStatus
 import com.savagellc.raven.gui.controller.MainViewController
 import com.savagellc.raven.include.*
@@ -23,8 +24,8 @@ import java.io.File
 
 
 class Manager(val stage: Stage) {
-    lateinit var coreManager:CoreManager
-    lateinit var controller:MainViewController
+    lateinit var coreManager: CoreManager
+    lateinit var controller: MainViewController
     var lastPos = 0.0
     var serverDisplayMode = false
     val treeView = TreeView<Any>()
@@ -47,19 +48,22 @@ class Manager(val stage: Stage) {
         stage.show()
         initialLoad()
     }
-    fun appendMessage(msg:GuiMessage) {
+
+    fun appendMessage(msg: GuiMessage) {
         Platform.runLater {
             controller.messagesList.items.add(msg.getRendered(controller.messagesList))
         }
     }
-    fun addDmChat(chat:PrivateChat) {
+
+    fun addDmChat(chat: PrivateChat) {
         Platform.runLater {
             controller.dmChannelsList.items.add(chat.guiObj)
         }
     }
-    fun getScroll() =  (controller.messagesList.childrenUnmodifiable[0] as VirtualFlow<*>).position
+
+    fun getScroll() = (controller.messagesList.childrenUnmodifiable[0] as VirtualFlow<*>).position
     fun loadChat(privateChat: Channel) {
-        if(loading) return
+        if (loading) return
         loading = true
         coreManager.initChat(privateChat) {
             Platform.runLater {
@@ -73,38 +77,62 @@ class Manager(val stage: Stage) {
             }
         }
     }
+
     fun prepend(messages: List<GuiMessage>) {
         val first = controller.messagesList.items.first()
         Platform.runLater {
-                controller.messagesList.items.addAll(0, messages.reversed().map { it.getRendered(controller.messagesList) } )
+            controller.messagesList.items.addAll(0, messages.reversed().map { it.getRendered(controller.messagesList) })
             Platform.runLater {
                 lastPos = getScroll()
                 controller.messagesList.scrollTo(first)
             }
         }
     }
+    fun renderServerChannels(server:Server): TreeItem<Any> {
+        val root = TreeItem<Any>("<- Back to server list")
+        root.isExpanded = true
+        server.channels.filter { th -> th.type == ChannelType.GUILD_TEXT.num && (th.obj.isNull("parent_id")) }
+            .sortedBy { x -> x.obj.getInt("position") }.forEach { cCh ->
+                root.children.add(TreeItem(cCh.guiObj))
+            }
+        server.channels.filter { th -> th.type == ChannelType.GUILD_CATEGORY.num }
+            .sortedBy { x -> x.obj.getInt("position") }.forEach { ch ->
+                val item = TreeItem<Any>(ch.guiObj)
+                item.isExpanded = true
+                server.channels.filter { cCh ->
+                    cCh.obj.has("parent_id") && cCh.obj.get("parent_id") is String && cCh.obj.get(
+                        "parent_id"
+                    ) == ch.id
+                }.filter { cCh -> cCh.type == ChannelType.GUILD_TEXT.num }.forEach { cCh ->
+                    item.children.add(TreeItem(cCh.guiObj))
+                }
+                root.children.add(item)
+            }
+
+        return root
+    }
     fun setupGuiEvents() {
         controller.statusComboBox.items.addAll(OnlineStatus.values())
         controller.statusComboBox.selectionModel.select(OnlineStatus.ONLINE)
         controller.statusComboBox.selectionModel.selectedItemProperty().addListener { observable, oldValue, newValue ->
             println(newValue)
-            Thread{
+            Thread {
                 coreManager.api.updateOnlineStatus(newValue)
             }.start()
         }
         controller.messagesList.setOnScrollFinished {
-           if(lastPos > 0 && getScroll() == 0.0) {
-               println("Loading older messages")
-               coreManager.loadOlderMessages()
-           }
+            if (lastPos > 0 && getScroll() == 0.0) {
+                println("Loading older messages")
+                coreManager.loadOlderMessages()
+            }
             lastPos = getScroll()
         }
         controller.dmChannelsList.selectionModel.selectedItemProperty().addListener { observable, oldValue, newValue ->
-            if(moving) return@addListener
+            if (moving) return@addListener
             loadChat(newValue.privateChat)
         }
         controller.sendMessageTextField.setOnKeyPressed {
-            if(it.code == KeyCode.ENTER) {
+            if (it.code == KeyCode.ENTER) {
                 coreManager.sendMessage(controller.sendMessageTextField.text) {
                     Platform.runLater {
                         controller.sendMessageTextField.text = "";
@@ -113,52 +141,51 @@ class Manager(val stage: Stage) {
             }
         }
         treeView.setOnMouseClicked {
-            if(treeView.selectionModel.selectedItem != null) {
+            if (treeView.selectionModel.selectedItem != null) {
                 val item = treeView.selectionModel.selectedItem
-                if(item == treeView.root) {
+                if (item == treeView.root) {
                     controller.serverTab.content = controller.serversList
                     return@setOnMouseClicked
 
                 }
-                if(item.value is GuiServerChannel) {
-                   val channel = (item.value as GuiServerChannel).privateChat
-                    if(channel.type == 0) {
+                if (item.value is GuiServerChannel) {
+                    val channel = (item.value as GuiServerChannel).privateChat
+                    if (channel.type == 0) {
                         loadChat(channel)
                     }
                 }
             }
         }
         controller.serversList.setOnMouseClicked {
-            if(it.clickCount == 2) {
-               if(controller.serversList.selectionModel.selectedItem != null) {
-                   val server = controller.serversList.selectionModel.selectedItem
-                   coreManager.loadServerChannels(server) {
-                      Platform.runLater {
-                          val root = TreeItem<Any>("<- Back to server list")
-                          server.channels.filter {th -> th.type == 4 }.sortedBy { x -> x.obj.getInt("position") }.forEach {ch->
-                              val item = TreeItem<Any>(ch.guiObj)
-                              server.channels.filter { cCh -> cCh.obj.has("parent_id") && cCh.obj.get("parent_id") is String && cCh.obj.get("parent_id") == ch.id }.forEach {cCh ->
-                                  item.children.add(TreeItem(cCh.guiObj))
-                              }
-                              root.children.add(item)
-                          }
-                          treeView.root = root
-
-                          controller.serverTab.content = treeView
-                          serverDisplayMode = true
-                      }
-                   }
-               }
-            } else {
-                if(controller.serversList.selectionModel.selectedItem != null) {
+            if (it.clickCount == 2) {
+                if (controller.serversList.selectionModel.selectedItem != null) {
                     val server = controller.serversList.selectionModel.selectedItem
-                    ServerMenu.openMenu(server, it.screenX, it.screenY, coreManager, controller.serversList, it.button == MouseButton.SECONDARY)
+                    coreManager.loadServerChannels(server) {
+                        Platform.runLater {
+                            treeView.root = renderServerChannels(server)
+                            coreManager.activeServer = server
+                            controller.serverTab.content = treeView
+                            serverDisplayMode = true
+                        }
+                    }
+                }
+            } else {
+                if (controller.serversList.selectionModel.selectedItem != null) {
+                    val server = controller.serversList.selectionModel.selectedItem
+                    ServerMenu.openMenu(
+                        server,
+                        it.screenX,
+                        it.screenY,
+                        coreManager,
+                        controller.serversList,
+                        it.button == MouseButton.SECONDARY
+                    )
                 }
             }
         }
         controller.joinBtn.setOnAction {
             val text = Prompts.textPrompt("Enter Link", "Enter Discord Invite link")
-            val id = if(text.contains("discord.gg")) text.split("discord.gg/")[1] else text
+            val id = if (text.contains("discord.gg")) text.split("discord.gg/")[1] else text
             Thread {
                 coreManager.api.acceptInvite(id)
             }.start()
@@ -166,7 +193,7 @@ class Manager(val stage: Stage) {
     }
 
     fun initialLoad() {
-        Thread{
+        Thread {
             coreManager.initLoad()
             Platform.runLater {
                 coreManager.chats.forEach {
@@ -176,18 +203,19 @@ class Manager(val stage: Stage) {
             }
         }.start()
     }
+
     fun start() {
         val dir = File(System.getProperty("user.home"), ".raven")
-        if(!dir.exists()) dir.mkdir()
+        if (!dir.exists()) dir.mkdir()
         val file = File(dir, "tkn-f")
-        if(file.exists()) {
-           Data.token = readFile(file).second
+        if (file.exists()) {
+            Data.token = readFile(file).second
             launchGui()
         } else {
             val userName = Prompts.textPrompt("Email", "Enter Email Address")
             val password = Prompts.passPrompt()
             val data = Api("", true).login(userName, password)
-            if(data.has("token")) {
+            if (data.has("token")) {
                 val token = data.getString("token")
                 writeFile(token.toByteArray(), file, false, true)
                 Data.token = token
@@ -201,6 +229,7 @@ class JavaFxBootstrapper : Application() {
     override fun start(primaryStage: Stage) {
         Manager(primaryStage).start()
     }
+
     companion object {
         fun bootstrap() = launch(JavaFxBootstrapper::class.java)
     }

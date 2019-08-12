@@ -30,9 +30,6 @@
               </tabs>
             </TabPane>
          </center>
-         <top>
-            <VBox prefHeight="36.0" prefWidth="200.0" BorderPane.alignment="CENTER" />
-         </top>
          <bottom>
             <HBox prefHeight="51.0" prefWidth="200.0" BorderPane.alignment="CENTER">
                <children>

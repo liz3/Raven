@@ -18,6 +18,17 @@ enum class RelationStatus(val n:Int) {
     INCOMING(3),
     OUTGOING(4)
 }
+
+enum class ChannelType(val num:Int) {
+    GUILD_TEXT(0),
+    DM(1),
+    GUILD_VOICE(2),
+    GROUP_DM(3),
+    GUILD_CATEGORY(4),
+    GUILD_NEWS(5),
+    GUILD_STORE(6)
+}
+
 //277767292404891648
 enum class OnlineStatus(val value:String, private val fName: String) {
     IDLE("idle", "Idle"),

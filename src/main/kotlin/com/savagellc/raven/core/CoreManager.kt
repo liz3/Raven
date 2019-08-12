@@ -2,6 +2,7 @@ package com.savagellc.raven.core
 
 import com.savagellc.raven.Data
 import com.savagellc.raven.discord.Api
+import com.savagellc.raven.discord.ChannelType
 import com.savagellc.raven.gui.Manager
 import com.savagellc.raven.include.*
 import javafx.application.Platform
@@ -16,6 +17,8 @@ class CoreManager(val guiManager: Manager) {
     val servers = Vector<Server>()
     val messageIndex = HashMap<String, GuiMessage>()
     lateinit var activeChat: Channel
+    lateinit var activeServer: Server
+
     init {
         api.webSocket.addEventListener("MESSAGE_CREATE") { json ->
             val id = json.getString("channel_id")
@@ -23,13 +26,13 @@ class CoreManager(val guiManager: Manager) {
                 val message = GuiMessage(json, this, activeChat)
                 activeChat.messages.add(message)
                 guiManager.appendMessage(message)
-                if(activeChat is PrivateChat) {
+                if (activeChat is PrivateChat) {
                     guiManager.moving = true
                     val obj = (activeChat as PrivateChat).guiObj
                     Platform.runLater {
                         guiManager.controller.dmChannelsList.items.remove(obj)
                         Platform.runLater {
-                        guiManager.controller.dmChannelsList.items.add(0, obj)
+                            guiManager.controller.dmChannelsList.items.add(0, obj)
                             guiManager.controller.dmChannelsList.selectionModel.select(obj)
                             guiManager.moving = false
                         }
@@ -38,8 +41,8 @@ class CoreManager(val guiManager: Manager) {
                 return@addEventListener
             }
             chats.forEach {
-                if(it.id == id) {
-                    if(it is PrivateChat) {
+                if (it.id == id) {
+                    if (it is PrivateChat) {
                         val obj = it.guiObj
                         Platform.runLater {
                             guiManager.controller.dmChannelsList.items.remove(obj)
@@ -78,14 +81,48 @@ class CoreManager(val guiManager: Manager) {
                 messageIndex[id]!!.pushRemove()
             }
         }
-        api.webSocket.addEventListener("CHANNEL_CREATE") {json ->
-            val chat = PrivateChat(json)
-            chats.add(chat)
-            guiManager.addDmChat(chat)
+        api.webSocket.addEventListener("CHANNEL_CREATE") { json ->
+            if (json.getInt("type") == ChannelType.DM.num) {
+                val chat = PrivateChat(json)
+                chats.add(chat)
+                guiManager.addDmChat(chat)
+            } else {
+                if (json.has("guild_id") && !json.isNull("guild_id")) {
+                    val guildId = json.getString("guild_id")
+                    val server = servers.find { it.id == guildId }
+                    server?.channels?.add(ServerChannel(json))
+                    if (this::activeServer.isInitialized)
+                        if (activeServer == server)
+                            Platform.runLater {
+                                guiManager.treeView.root = guiManager.renderServerChannels(server)
+                            }
+                }
+            }
         }
-        api.webSocket.addEventListener("GUILD_DELETE") {json ->
+        api.webSocket.addEventListener("CHANNEL_DELETE") { json ->
+            val type = json.getInt("type")
+            if (type == ChannelType.DM.num) {
+
+            } else {
+                if (json.has("guild_id") && !json.isNull("guild_id")) {
+                    val guildId = json.getString("guild_id")
+                    val server = servers.find { it.id == guildId }
+                    if (server != null) {
+                        val channel = server.channels.find { it.id == json.getString("id") }
+                        server.channels.remove(channel)
+                        if (this::activeServer.isInitialized)
+                            if (activeServer == server)
+                                Platform.runLater {
+                                    guiManager.treeView.root = guiManager.renderServerChannels(server)
+                                }
+                    }
+
+                }
+            }
+        }
+        api.webSocket.addEventListener("GUILD_DELETE") { json ->
             val server = servers.find { it.id == json.getString("id") }
-            if(server != null) {
+            if (server != null) {
                 Platform.runLater {
                     guiManager.controller.serversList.items.remove(server)
                     servers.remove(server)
@@ -100,11 +137,13 @@ class CoreManager(val guiManager: Manager) {
             }
         }
     }
-    fun leaveServer(id:String) {
-        Thread{
+
+    fun leaveServer(id: String) {
+        Thread {
             api.leaveServer(id)
         }.start()
     }
+
     fun loadOlderMessages() {
         if (activeChat.hasLoadedAll) return
         Thread {
@@ -118,12 +157,14 @@ class CoreManager(val guiManager: Manager) {
             guiManager.prepend(messages)
         }.start()
     }
-    fun createDm(target:String) {
-        if(chats.find { it.id == target } != null) return
+
+    fun createDm(target: String) {
+        if (chats.find { it.id == target } != null) return
         Thread {
             api.createDm(target)
         }.start()
     }
+
     fun sendMessage(message: String, cb: (GuiMessage) -> Unit) {
         if (this::activeChat.isInitialized) {
             Thread {
@@ -167,6 +208,7 @@ class CoreManager(val guiManager: Manager) {
             callback()
         }.start()
     }
+
     fun deleteMessage(message: GuiMessage, channelId: String, callback: () -> Unit) {
         Thread {
             api.deleteMessage(channelId, message.id)

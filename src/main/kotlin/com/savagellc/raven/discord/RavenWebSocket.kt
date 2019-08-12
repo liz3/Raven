@@ -114,7 +114,7 @@ class RavenWebSocket(val token: String) {
             .put("large_threshold", 250)
         val props = JSONObject()
         props.put("os", System.getProperty("os.name"))
-        props.put("browser", "none")
+        props.put("browser", "Raven")
         props.put("device", "Raven")
         val presence = JSONObject()
         presence.put("activities", JSONArray()).put("afk", false).put("since", 0).put("status", "online")

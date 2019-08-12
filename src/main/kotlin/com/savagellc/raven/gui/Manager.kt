@@ -29,6 +29,8 @@ class Manager(val stage: Stage) {
     var serverDisplayMode = false
     val treeView = TreeView<Any>()
     var loading = false
+    var moving = false
+
 
     private fun launchGui() {
         coreManager = CoreManager(this)
@@ -98,6 +100,7 @@ class Manager(val stage: Stage) {
             lastPos = getScroll()
         }
         controller.dmChannelsList.selectionModel.selectedItemProperty().addListener { observable, oldValue, newValue ->
+            if(moving) return@addListener
             loadChat(newValue.privateChat)
         }
         controller.sendMessageTextField.setOnKeyPressed {

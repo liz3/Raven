@@ -24,26 +24,32 @@ class CoreManager(val guiManager: Manager) {
                 activeChat.messages.add(message)
                 guiManager.appendMessage(message)
                 if(activeChat is PrivateChat) {
+                    guiManager.moving = true
                     val obj = (activeChat as PrivateChat).guiObj
                     Platform.runLater {
                         guiManager.controller.dmChannelsList.items.remove(obj)
+                        Platform.runLater {
                         guiManager.controller.dmChannelsList.items.add(0, obj)
-                        guiManager.controller.dmChannelsList.selectionModel.select(obj)
+                            guiManager.controller.dmChannelsList.selectionModel.select(obj)
+                            guiManager.moving = false
+                        }
                     }
                 }
                 return@addEventListener
             }
             chats.forEach {
-                if (it.id == id && it.loaded) {
-                    val message = GuiMessage(json, this, it)
-                    it.messages.add(message)
-                    if(activeChat is PrivateChat) {
-                        val obj = (activeChat as PrivateChat).guiObj
+                if(it.id == id) {
+                    if(it is PrivateChat) {
+                        val obj = it.guiObj
                         Platform.runLater {
                             guiManager.controller.dmChannelsList.items.remove(obj)
                             guiManager.controller.dmChannelsList.items.add(0, obj)
                         }
                     }
+                }
+                if (it.id == id && it.loaded) {
+                    val message = GuiMessage(json, this, it)
+                    it.messages.add(message)
                     return@addEventListener
                 }
             }

@@ -2,7 +2,7 @@
 This is a free software alternative discord client.
 
 # ATTENTION
-This could be referenced as `Self-botting` and is suspect to vialation of Discords, ToS **USE AT OWN RISK**, no binaries will be provided.
+This could be referenced as `Self-botting` and is suspect to vialation of Discords ToS **USE AT OWN RISK**, no binaries will be provided.
 
 ## Running locally 
 ### Prerequisites
@@ -12,7 +12,7 @@ Windows
 ```cmd
 > gradlew run
 ```
-mac oe gnu/linux
+mac or gnu/linux
 ```sh
 $ ./gradlew run
 ```
@@ -22,7 +22,7 @@ Windows
 ```cmd
 > gradlew shadowJar
 ```
-mac oe gnu/linux
+mac or gnu/linux
 ```sh
 $ ./gradlew shadowJar
 ```

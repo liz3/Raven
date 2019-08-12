@@ -23,7 +23,7 @@ import java.io.File
 
 
 class Manager(val stage: Stage) {
-    val coreManager = CoreManager(this)
+    lateinit var coreManager:CoreManager
     lateinit var controller:MainViewController
     var lastPos = 0.0
     var serverDisplayMode = false
@@ -31,6 +31,7 @@ class Manager(val stage: Stage) {
     var loading = false
 
     private fun launchGui() {
+        coreManager = CoreManager(this)
         val loader = FXMLLoader()
         val parent = loader.load<BorderPane>(javaClass.getResourceAsStream("/fxml/MainView.fxml"))
         controller = loader.getController() as MainViewController

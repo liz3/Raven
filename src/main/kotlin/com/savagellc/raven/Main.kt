@@ -7,6 +7,5 @@ object Data {
 }
 
 fun main(args:Array<String>) {
-    Data.token = args[0]
     JavaFxBootstrapper.bootstrap()
 }

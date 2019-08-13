@@ -3,7 +3,8 @@ package com.savagellc.raven.gui.renders
 import com.savagellc.raven.core.CoreManager
 import com.savagellc.raven.discord.ImageCache
 import com.savagellc.raven.gui.MessageMenu
-import com.savagellc.raven.gui.cursorOnHover
+import com.savagellc.raven.gui.browse
+import com.savagellc.raven.gui.cursourOnHover
 import com.savagellc.raven.include.GuiMessage
 import javafx.application.Platform
 import javafx.concurrent.Task
@@ -18,7 +19,11 @@ import javafx.scene.web.WebView;
 import javafx.scene.layout.HBox
 import javafx.scene.layout.Priority
 import javafx.scene.layout.VBox
+import org.json.JSONArray
 import org.json.JSONObject
+import java.awt.Desktop
+import java.lang.ref.SoftReference
+import java.net.URI
 
 
 const val maxImageWidth = 1000.0
@@ -29,6 +34,26 @@ fun getLabel(content: String, style: String = "", isUnderLined: Boolean = false)
     label.isUnderline = isUnderLined
     label.maxWidth = maxImageWidth - 80
     return label
+}
+
+fun getLabel(content: String, style: String = "", isUnderLined: Boolean = false, cb: () -> Unit): Label {
+    val label = Label(content)
+    cursourOnHover(label)
+    label.setOnMouseClicked {
+        cb()
+    }
+    label.isWrapText = true;
+    if (style.isNotEmpty()) label.style = style
+    label.isUnderline = isUnderLined
+    label.maxWidth = maxImageWidth - 80
+    return label
+}
+
+fun appendClick(label: Label, cb: () -> Unit) {
+    cursourOnHover(label)
+    label.setOnMouseClicked {
+        cb()
+    }
 }
 
 private fun addUserImage(
@@ -54,6 +79,17 @@ private fun addUserImage(
     val loader = Thread(task)
     loader.isDaemon = true
     loader.start()
+}
+
+fun processMentions(mentions: JSONArray, content: String): String {
+    var cpy = content
+    mentions.forEach {
+        it as JSONObject
+        val id = it.getString("id")
+        val name = it.getString("username")
+        cpy = cpy.replace("<@$id>", "@$name")
+    }
+    return cpy
 }
 
 fun render(
@@ -92,7 +128,8 @@ fun render(
     HBox.setHgrow(contentRow, Priority.ALWAYS)
     val nameLabel = getLabel(message.senderName, "-fx-font-size: 16;")
     contentRow.children.add(nameLabel)
-    val contentLabel = getLabel(message.content, "-fx-font-size: 15;")
+    val contentLabel =
+        getLabel(processMentions(message.rootObj.getJSONArray("mentions"), message.content), "-fx-font-size: 15;")
     if (message.content != "") {
         contentRow.children.add(contentLabel)
     }
@@ -142,43 +179,16 @@ fun render(
         val childBox = VBox()
         childBox.padding = Insets(0.0, 0.0, 0.0, 10.0)
         var previewIndex = -1
-        if (it.has("title")) childBox.children.add(getLabel(it.getString("title"), "-fx-font-size: 15;", true))
-        if (it.has("description")) childBox.children.add(getLabel(it.getString("description")))
-        if (it.has("video") && !it.isNull("video")) {
-            var webView: WebView? = null
-            var imageView: ImageView? = null
-            cursorOnHover(childBox)
-            var switched = false
-            childBox.setOnMouseClicked { ev ->
-                if (webView != null && ev.pickResult.intersectedNode == webView) return@setOnMouseClicked
-                if (ev.button == MouseButton.PRIMARY) {
-                    if (switched) {
-                        childBox.children[previewIndex] = imageView!!
-                        webView!!.engine.load(null)
-                        switched = false
-                        return@setOnMouseClicked
-                    } else {
-                        imageView = childBox.children[previewIndex] as ImageView
-                        if (webView != null) {
-                            webView!!.engine.reload()
-                        } else {
-                            val renderer = WebView()
-                            renderer.prefWidth = imageView!!.fitWidth
-                            renderer.prefHeight = 430.0
-                            renderer.engine.load(it.getJSONObject("video").getString("url"))
-                            renderer.engine.loadWorker.stateProperty().addListener { observable, oldValue, newValue ->
-                                if (newValue == Worker.State.SUCCEEDED) {
-                                    renderer.engine.executeScript("document.querySelector(\".ytp-cued-thumbnail-overlay-image\").click()")
-                                }
-                            }
-                            webView = renderer
-                        }
-                        childBox.children[previewIndex] = webView
-                        switched = true
-                    }
-                }
-            }
+        cursourOnHover(childBox)
+        if (it.has("url") && !it.isNull("url")) {
+            if (it.has("title")) childBox.children.add(getLabel(it.getString("title"), "-fx-font-size: 15;", true) {
+                browse(it.getString("url"))
+            })
+
+        } else {
+            if (it.has("title")) childBox.children.add(getLabel(it.getString("title"), "-fx-font-size: 15;", true))
         }
+        if (it.has("description")) childBox.children.add(getLabel(it.getString("description")))
         if (it.has("thumbnail")) {
             val task = object : Task<Void>() {
                 override fun call(): Void? {
@@ -186,6 +196,49 @@ fun render(
                     val imageView = ImageView(SwingFXUtils.toFXImage(ImageCache.getImage(url), null))
                     val lW = it.getJSONObject("thumbnail").getInt("width").toDouble()
                     imageView.isPreserveRatio = true
+                    if (it.has("video") && !it.isNull("video")) {
+                        var webView: WebView? = null
+                        var switched = false
+                        imageView.setOnMouseClicked { ev ->
+                            if (webView != null && ev.pickResult.intersectedNode == webView) return@setOnMouseClicked
+                            if (ev.button == MouseButton.PRIMARY) {
+                                if (switched) {
+                                    childBox.children[previewIndex] = imageView!!
+                                    webView!!.engine.load(null)
+                                    switched = false
+                                    return@setOnMouseClicked
+                                } else {
+                                    if (webView != null) {
+                                        webView!!.engine.reload()
+                                    } else {
+                                        val renderer = WebView()
+                                        renderer.prefWidth = imageView!!.fitWidth
+                                        renderer.prefHeight = 430.0
+                                        renderer.engine.load(it.getJSONObject("video").getString("url"))
+                                        renderer.engine.loadWorker.stateProperty()
+                                            .addListener { observable, oldValue, newValue ->
+                                                if (newValue == Worker.State.SUCCEEDED) {
+                                                    if (switched)
+                                                        renderer.engine.executeScript("document.querySelector(\".ytp-cued-thumbnail-overlay-image\").click()")
+                                                }
+                                            }
+                                        webView = renderer
+                                    }
+                                    childBox.children[previewIndex] = webView
+                                    switched = true
+                                }
+                            }
+                        }
+                    } else {
+                        if (it.has("url") && !it.isNull("url")) {
+                            cursourOnHover(imageView)
+                            imageView.setOnMouseClicked { ev ->
+                                browse(it.getString("url"))
+
+                            }
+
+                        }
+                    }
                     Platform.runLater {
                         var computed =
                             if (messagesList.width > maxImageWidth - 100) maxImageWidth - 100 else messagesList.width - 100

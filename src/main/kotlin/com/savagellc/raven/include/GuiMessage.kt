@@ -10,6 +10,7 @@ import javafx.scene.control.TextField
 import javafx.scene.input.KeyCode
 import javafx.scene.layout.HBox
 import javafx.scene.layout.VBox
+import org.json.JSONArray
 import org.json.JSONObject
 
 class GuiMessage(
@@ -24,17 +25,20 @@ class GuiMessage(
     val type = rootObj.getInt("type")
     val senderName = author.getString("username")
     var content = rootObj.getString("content")
-    val attachments = rootObj.getJSONArray("attachments")
-    val embeds = rootObj.getJSONArray("embeds")
+    var attachments = rootObj.getJSONArray("attachments")
+    var embeds = rootObj.getJSONArray("embeds")
     private lateinit var hBox: Triple<HBox, Label, VBox>
     private lateinit var editorField: TextField
     var renderSeparator = false
     var isEditMode = false
-    fun pushContentUpdate(updatedContent:String) {
-        content = updatedContent
-        val thRef = hBox
+    fun pushContentUpdate(updatedContent:String?, embeds:JSONArray?, attachments:JSONArray?) {
+       if(updatedContent != null) content = updatedContent
+        if(embeds != null) this.embeds = embeds
+        if(attachments != null) this.attachments = attachments
       Platform.runLater {
-          thRef.second.text = updatedContent
+          val result = render(this, guiObject.controller.messagesList, coreManager, renderSeparator)
+          hBox.third.children.clear()
+          hBox.third.children.addAll(result.third.children)
       }
     }
     fun pushRemove() {

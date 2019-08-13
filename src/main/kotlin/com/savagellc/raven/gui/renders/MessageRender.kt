@@ -61,7 +61,7 @@ fun render(
     renderSeparator: Boolean
 ): Triple<HBox, Label, VBox> {
     val rootBox = HBox()
-    rootBox.style = "-fx-padding: 0 15 0 0"
+    rootBox.style = "-fx-padding: 0 15 0 0;"
     if(renderSeparator) {
         rootBox.style += "-fx-border-color: red; -fx-border-width: 2 0 0 0"
     }

@@ -75,8 +75,9 @@ class CoreManager(val guiManager: Manager) {
                 val id = json.getString("id")
                 if (messageIndex.containsKey(id)) {
                     val saved = messageIndex[id]
-
-                  saved!!.pushContentUpdate(json.getString("content"))
+                  saved!!.pushContentUpdate(if(json.has("content") && !json.isNull("content")) json.getString("content") else null,
+                      if(json.has("embeds") && !json.isNull("embeds")) json.getJSONArray("embeds") else null,
+                      if(json.has("attachments") && !json.isNull("attachments")) json.getJSONArray("attachments") else null)
                 }
 
             }.start()

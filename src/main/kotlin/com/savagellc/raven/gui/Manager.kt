@@ -58,19 +58,22 @@ class OpenTab(
 
     private fun registerScrollListener() {
         (controller.messagesList.childrenUnmodifiable[0] as VirtualFlow<*>).positionProperty()
-            .addListener() { _, _, newVal ->
+            .addListener() { _, _, _ ->
+                val lastPos = this.lastPos
+                this.lastPos = getScroll()
                 if (loading) return@addListener
                 loading = true
-                if (lastPos > 0 && newVal.toDouble() == 0.0) {
-                    lastPos = 0.0
+                if (lastPos > .1 && getScroll() < .1) {
+
                     println("loading older messages")
                     coreManager.loadOlderMessages(channel, this)
+
                 } else {
                     Platform.runLater {
                         loading = false
                     }
                 }
-                lastPos = newVal.toDouble()
+
             }
     }
 
@@ -105,13 +108,18 @@ class OpenTab(
     }
 
     fun prepend(messages: List<GuiMessage>) {
+        if (messages.isEmpty()) return
         val first = controller.messagesList.items.first()
+        println(first)
         Platform.runLater {
+            messages.reversed().last().renderSeparator = true
             controller.messagesList.items.addAll(0, messages.reversed().map { it.getRendered(controller.messagesList) })
             Platform.runLater {
-                controller.messagesList.scrollTo(first)
-                loading = false
+                controller.messagesList.scrollTo(messages.size)
             }
+
+            loading = false
+
         }
     }
 }
@@ -201,10 +209,12 @@ class Manager(val stage: Stage) {
 
         return root
     }
+
     fun shutdown() {
         coreManager.api.webSocket.websocket.sendClose()
         Platform.exit()
     }
+
     fun logout() {
         Thread {
             openChats.clear()
@@ -222,6 +232,7 @@ class Manager(val stage: Stage) {
             }
         }.start()
     }
+
     private fun setupGuiEvents() {
         stage.setOnCloseRequest {
             shutdown()
@@ -321,7 +332,7 @@ class Manager(val stage: Stage) {
         file.items.addAll(getMenuOpt("Logout") {
             logout()
         }, getMenuOpt("Close") {
-           shutdown()
+            shutdown()
         })
         menu.menus.add(file)
         menu.isUseSystemMenuBar = true
@@ -387,6 +398,7 @@ class JavaFxBootstrapper : Application() {
     override fun stop() {
         exitProcess(0)
     }
+
     companion object {
         fun bootstrap() = launch(JavaFxBootstrapper::class.java)
     }

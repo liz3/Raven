@@ -28,6 +28,7 @@ class GuiMessage(
     val embeds = rootObj.getJSONArray("embeds")
     private lateinit var hBox: Triple<HBox, Label, VBox>
     private lateinit var editorField: TextField
+    var renderSeparator = false
     var isEditMode = false
     fun pushContentUpdate(updatedContent:String) {
         content = updatedContent
@@ -81,7 +82,7 @@ class GuiMessage(
         return "$senderName> $content"
     }
     fun getRendered(messagesList: ListView<HBox>): HBox {
-        hBox = render(this, messagesList, coreManager)
+        hBox = render(this, messagesList, coreManager, renderSeparator)
         coreManager.messageIndex[this.id] = this
         return hBox.first
     }

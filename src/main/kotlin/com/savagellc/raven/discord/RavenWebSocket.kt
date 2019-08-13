@@ -140,7 +140,7 @@ class RavenWebSocket(val token: String) {
             OpCode.DISPATCH.num -> {
                 val message = raw.getJSONObject("d")
                 val type = raw.getString("t")
-                println(type)
+             //   println(type)
                 eventListeners.forEach {
                     if(it.first == type) it.second(message)
                 }

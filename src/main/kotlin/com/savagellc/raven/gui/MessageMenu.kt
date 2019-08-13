@@ -47,7 +47,7 @@ object MessageMenu {
             }
             menu.items.add(createDm)
         }
-        if(message.hasUpdate) {
+        if (message.hasUpdate) {
             val showUpdate = MenuItem("Show updated message")
             showUpdate.setOnAction {
                 message.showUpdate(false)
@@ -59,8 +59,8 @@ object MessageMenu {
             menu.items.addAll(showUpdate, showUpdateAppend)
         }
 
-            menu.show(messagesList, x, y)
-            visible = true
+        menu.show(messagesList, x, y)
+        visible = true
 
     }
 }

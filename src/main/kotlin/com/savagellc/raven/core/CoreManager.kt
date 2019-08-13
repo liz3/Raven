@@ -25,7 +25,7 @@ class CoreManager(val guiManager: Manager) {
     init {
         api.webSocket.addEventListener("MESSAGE_CREATE") { json ->
             val id = json.getString("channel_id")
-            if(guiManager.openChats.containsKey(id)) {
+            if (guiManager.openChats.containsKey(id)) {
                 val activeChat = guiManager.openChats[id]!!
                 val message = GuiMessage(json, this, activeChat)
                 activeChat.channel.messages.add(message)
@@ -75,9 +75,11 @@ class CoreManager(val guiManager: Manager) {
                 val id = json.getString("id")
                 if (messageIndex.containsKey(id)) {
                     val saved = messageIndex[id]
-                  saved!!.pushContentUpdate(if(json.has("content") && !json.isNull("content")) json.getString("content") else null,
-                      if(json.has("embeds") && !json.isNull("embeds")) json.getJSONArray("embeds") else null,
-                      if(json.has("attachments") && !json.isNull("attachments")) json.getJSONArray("attachments") else null)
+                    saved!!.pushContentUpdate(
+                        if (json.has("content") && !json.isNull("content")) json.getString("content") else null,
+                        if (json.has("embeds") && !json.isNull("embeds")) json.getJSONArray("embeds") else null,
+                        if (json.has("attachments") && !json.isNull("attachments")) json.getJSONArray("attachments") else null
+                    )
                 }
 
             }.start()
@@ -151,7 +153,7 @@ class CoreManager(val guiManager: Manager) {
         }.start()
     }
 
-    fun loadOlderMessages(channel: Channel, tab:OpenTab) {
+    fun loadOlderMessages(channel: Channel, tab: OpenTab) {
         if (channel.hasLoadedAll) return
         Thread {
             val firstId = channel.messages[0].id
@@ -173,14 +175,14 @@ class CoreManager(val guiManager: Manager) {
     }
 
     fun sendMessage(message: String, channel: OpenTab, cb: (GuiMessage) -> Unit) {
-            Thread {
-                val sendObj = JSONObject(api.sendSimpleMessage(channel.channel.id, message).data)
-                val messageObj = GuiMessage(
-                    sendObj, this, channel
-                )
-                cb(messageObj)
-            }.start()
-        }
+        Thread {
+            val sendObj = JSONObject(api.sendSimpleMessage(channel.channel.id, message).data)
+            val messageObj = GuiMessage(
+                sendObj, this, channel
+            )
+            cb(messageObj)
+        }.start()
+    }
 
 
     fun loadServerChannels(server: Server, cb: () -> Unit) {
@@ -225,13 +227,18 @@ class CoreManager(val guiManager: Manager) {
     fun initChat(channel: Channel, callback: (Boolean) -> Unit) {
         Thread {
             val response = api.getMessages(channel.id)
-            if(response.hasData) {
+            if (response.hasData) {
                 if (!channel.loaded) channel.populateDataFromArray(JSONArray(response.data), this)
                 callback(true)
             } else {
                 Platform.runLater {
                     callback(false)
-                    Prompts.infoCheck("Failed to load Channel", "Cant load channel", "Failed to retrieve messages (${response.code} ${response.respMessage})", Alert.AlertType.ERROR)
+                    Prompts.infoCheck(
+                        "Failed to load Channel",
+                        "Cant load channel",
+                        "Failed to retrieve messages (${response.code} ${response.respMessage})",
+                        Alert.AlertType.ERROR
+                    )
                 }
             }
         }.start()

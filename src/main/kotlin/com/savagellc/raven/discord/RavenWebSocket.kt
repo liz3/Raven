@@ -39,29 +39,33 @@ class RavenWebSocket(val token: String, val api: Api) {
     var heartbeatThread = Thread {
         while (heart_beat_interval != 0L && !disposed) {
             sendMessage(OpCode.HEART_BEAT, requests)
-           try {
-               Thread.sleep(heart_beat_interval)
-           }catch (e:Exception) {
-               break
-           }
+            try {
+                Thread.sleep(heart_beat_interval)
+            } catch (e: Exception) {
+                break
+            }
         }
     }
-    fun addEventListener(name:String, cb: (JSONObject) -> Unit) {
+
+    fun addEventListener(name: String, cb: (JSONObject) -> Unit) {
         eventListeners.add(Pair(name, cb))
     }
+
     fun clearEventListeners() {
         eventListeners.clear()
     }
-     fun sendMessage(code: OpCode, data: Any?) {
+
+    fun sendMessage(code: OpCode, data: Any?) {
         val obj = JSONObject()
         obj.put("op", code.num)
         obj.put("d", data)
-         if(api.hasDebugger) api.debugger.pushSockUp(code, data)
+        if (api.hasDebugger) api.debugger.pushSockUp(code, data)
 
 
         websocket.sendText(obj.toString())
 
     }
+
     private fun allocateBuffer(binary: ByteArray) {
         this.readBuffer = ByteArrayOutputStream(binary.size * 2)
         this.readBuffer!!.write(binary)
@@ -94,6 +98,7 @@ class RavenWebSocket(val token: String, val api: Api) {
             override fun onTextMessage(websocket: WebSocket, message: String) {
                 onMessage(JSONObject(message))
             }
+
             override fun onBinaryMessage(websocket: WebSocket?, binary: ByteArray) {
                 if (!onBufferMessage(binary)) return
 
@@ -117,7 +122,8 @@ class RavenWebSocket(val token: String, val api: Api) {
 
         websocket.connect()
     }
-    private fun handleAuthenticate(message:JSONObject) {
+
+    private fun handleAuthenticate(message: JSONObject) {
         heart_beat_interval = message.getLong("heartbeat_interval")
         heartbeatThread.start()
         val obj = JSONObject()
@@ -138,7 +144,7 @@ class RavenWebSocket(val token: String, val api: Api) {
     fun onMessage(raw: JSONObject) {
         requests++
         val code = raw.getInt("op")
-        if(api.hasDebugger) api.debugger.pushSockDown(code, raw)
+        if (api.hasDebugger) api.debugger.pushSockDown(code, raw)
         when (code) {
             OpCode.HEARTBEAT_ACK.num -> {
             }
@@ -146,7 +152,7 @@ class RavenWebSocket(val token: String, val api: Api) {
                 val message = raw.getJSONObject("d")
                 val type = raw.getString("t")
                 eventListeners.forEach {
-                    if(it.first == type) it.second(message)
+                    if (it.first == type) it.second(message)
                 }
             }
             OpCode.HELLO.num -> {

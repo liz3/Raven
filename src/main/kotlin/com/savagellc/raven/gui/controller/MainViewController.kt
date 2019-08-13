@@ -24,16 +24,16 @@ class MainViewController {
     lateinit var serversList: ListView<Server>
 
     @FXML
-    lateinit var serverTab:Tab
+    lateinit var serverTab: Tab
 
     @FXML
     lateinit var statusComboBox: ComboBox<OnlineStatus>
 
     @FXML
-    lateinit var joinBtn:Button
+    lateinit var joinBtn: Button
 
     @FXML
-    lateinit var openChatsTabView:TabPane
+    lateinit var openChatsTabView: TabPane
 
     @FXML
     lateinit var mainMenuBar: MenuBar

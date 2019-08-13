@@ -3,7 +3,7 @@ package com.savagellc.raven.gui.renders
 import com.savagellc.raven.core.CoreManager
 import com.savagellc.raven.discord.ImageCache
 import com.savagellc.raven.gui.MessageMenu
-import com.savagellc.raven.gui.cursourOnHover
+import com.savagellc.raven.gui.cursorOnHover
 import com.savagellc.raven.include.GuiMessage
 import javafx.application.Platform
 import javafx.concurrent.Task
@@ -19,7 +19,6 @@ import javafx.scene.layout.HBox
 import javafx.scene.layout.Priority
 import javafx.scene.layout.VBox
 import org.json.JSONObject
-import java.lang.ref.SoftReference
 
 
 const val maxImageWidth = 1000.0
@@ -148,7 +147,7 @@ fun render(
         if (it.has("video") && !it.isNull("video")) {
             var webView: WebView? = null
             var imageView: ImageView? = null
-            cursourOnHover(childBox)
+            cursorOnHover(childBox)
             var switched = false
             childBox.setOnMouseClicked { ev ->
                 if (webView != null && ev.pickResult.intersectedNode == webView) return@setOnMouseClicked

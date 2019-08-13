@@ -8,6 +8,6 @@ object Data {
     val options = Options()
 }
 
-fun main(args:Array<String>) {
+fun main(args: Array<String>) {
     JavaFxBootstrapper.bootstrap()
 }

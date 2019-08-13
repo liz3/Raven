@@ -229,6 +229,15 @@ fun render(
                                 }
                             }
                         }
+                    } else {
+                        if (it.has("url") && !it.isNull("url")) {
+                          cursourOnHover(imageView)
+                           imageView.setOnMouseClicked {ev ->
+                               browse(it.getString("url"))
+
+                           }
+
+                        }
                     }
                     Platform.runLater {
                         var computed =

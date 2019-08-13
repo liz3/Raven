@@ -52,7 +52,6 @@ class GuiMessage(
 
     }
     fun editMode() {
-        println(this.hBox)
         if(!isEditMode) {
             isEditMode = true
             Platform.runLater {

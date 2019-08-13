@@ -64,10 +64,7 @@ class OpenTab(
                 if (loading) return@addListener
                 loading = true
                 if (lastPos > .1 && getScroll() < .1) {
-
-                    println("loading older messages")
                     coreManager.loadOlderMessages(channel, this)
-
                 } else {
                     Platform.runLater {
                         loading = false
@@ -110,7 +107,6 @@ class OpenTab(
     fun prepend(messages: List<GuiMessage>) {
         if (messages.isEmpty()) return
         val first = controller.messagesList.items.first()
-        println(first)
         Platform.runLater {
             messages.reversed().last().renderSeparator = true
             controller.messagesList.items.addAll(0, messages.reversed().map { it.getRendered(controller.messagesList) })
@@ -243,7 +239,6 @@ class Manager(val stage: Stage) {
         controller.statusComboBox.items.addAll(OnlineStatus.values())
         controller.statusComboBox.selectionModel.select(OnlineStatus.ONLINE)
         controller.statusComboBox.selectionModel.selectedItemProperty().addListener { observable, oldValue, newValue ->
-            println(newValue)
             Thread {
                 coreManager.api.updateOnlineStatus(newValue)
             }.start()

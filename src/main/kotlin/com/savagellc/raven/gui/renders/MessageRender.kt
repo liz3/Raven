@@ -18,6 +18,7 @@ import javafx.scene.web.WebView;
 import javafx.scene.layout.HBox
 import javafx.scene.layout.Priority
 import javafx.scene.layout.VBox
+import org.json.JSONArray
 import org.json.JSONObject
 import java.lang.ref.SoftReference
 
@@ -56,7 +57,16 @@ private fun addUserImage(
     loader.isDaemon = true
     loader.start()
 }
-
+fun processMentions(mentions: JSONArray, content: String): String {
+    var cpy = content
+    mentions.forEach {
+        it as JSONObject
+        val id = it.getString("id")
+        val name = it.getString("username")
+        cpy = cpy.replace("<@$id>", "@$name")
+    }
+    return cpy
+}
 fun render(
     message: GuiMessage,
     messagesList: ListView<HBox>,
@@ -93,7 +103,7 @@ fun render(
     HBox.setHgrow(contentRow, Priority.ALWAYS)
     val nameLabel = getLabel(message.senderName, "-fx-font-size: 16;")
     contentRow.children.add(nameLabel)
-    val contentLabel = getLabel(message.content, "-fx-font-size: 15;")
+    val contentLabel = getLabel(processMentions(message.rootObj.getJSONArray("mentions"), message.content), "-fx-font-size: 15;")
     if (message.content != "") {
         contentRow.children.add(contentLabel)
     }

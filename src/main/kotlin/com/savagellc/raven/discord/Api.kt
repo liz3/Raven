@@ -111,7 +111,10 @@ class Api(private val token: String, holdConnect: Boolean = false) {
             b
         )
     }
-
+    fun sendMessageAckByChannelSwitch(channelId:String, messageId: String) {
+        webSocket.sendMessage(OpCode.CHANNEL_SWITCH, JSONObject().put("channel_id", channelId))
+        request("/channels/$channelId/messages/$messageId/ack", method = "POST", data = JSONObject().put("token", JSONObject.NULL).toString())
+    }
     fun getDmChannels(): JSONArray {
         val response = request("/users/@me/channels")
         return JSONArray(response.data)

@@ -12,6 +12,7 @@ open class Channel(val rootObject:JSONObject) {
     var hasLoadedAll = false
     var loaded = false
     lateinit var guiReference: OpenTab
+    var lastAck = ""
 
     fun populateDataFromArray(data: JSONArray, coreManager: CoreManager) {
         messages.clear()
@@ -23,6 +24,12 @@ open class Channel(val rootObject:JSONObject) {
                     it, coreManager, guiReference
                 )
             )
+        }
+        if(lastAck == "") {
+            lastAck = messages.lastElement().id
+            Thread {
+                coreManager.api.sendMessageAckByChannelSwitch(id, messages.lastElement().id)
+            }.start()
         }
     }
 }

@@ -24,7 +24,8 @@ enum class OpCode(val num: Int) {
     REQUEST_GUILD_MEMBERS(8),
     INVALID_SESSION(9),
     HELLO(10),
-    HEARTBEAT_ACK(11)
+    HEARTBEAT_ACK(11),
+    CHANNEL_SWITCH(13)
 }
 
 class RavenWebSocket(val token: String) {

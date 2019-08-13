@@ -224,6 +224,18 @@ class Manager(val stage: Stage) {
                 }
             }
         }
+        controller.openChatsTabView.selectionModel.selectedItemProperty().addListener { _, old, newValue ->
+            if(newValue != null && old != null) {
+                val find = openChats.values.find { it.guiTab == newValue }
+                if(find != null && find.channel.messages.size > 0) {
+                        val lastId = find.channel.messages.lastElement().id
+                        if(find.channel.lastAck != find.channel.messages.lastElement().id)
+                            Thread {
+                                coreManager.api.sendMessageAckByChannelSwitch(find.channel.id, lastId)
+                            }.start()
+                    }
+            }
+        }
         controller.serversList.setOnMouseClicked {
             if (it.clickCount == 2) {
                 if (controller.serversList.selectionModel.selectedItem != null) {

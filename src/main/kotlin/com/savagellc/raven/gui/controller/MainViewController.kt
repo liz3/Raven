@@ -34,4 +34,8 @@ class MainViewController {
 
     @FXML
     lateinit var openChatsTabView:TabPane
+
+    @FXML
+    lateinit var mainMenuBar: MenuBar
+
 }

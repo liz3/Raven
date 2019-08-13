@@ -33,16 +33,24 @@ class RavenWebSocket(val token: String) {
     val zlibContext = Inflater()
     private val eventListeners = Vector<Pair<String, (JSONObject) -> Unit>>()
     private var heart_beat_interval = 0L
+    var disposed = false
     var requests = 0
     var readBuffer: ByteArrayOutputStream? = null
     var heartbeatThread = Thread {
-        while (heart_beat_interval != 0L) {
+        while (heart_beat_interval != 0L && !disposed) {
             sendMessage(OpCode.HEART_BEAT, requests)
-            Thread.sleep(heart_beat_interval)
+           try {
+               Thread.sleep(heart_beat_interval)
+           }catch (e:Exception) {
+               break
+           }
         }
     }
     fun addEventListener(name:String, cb: (JSONObject) -> Unit) {
         eventListeners.add(Pair(name, cb))
+    }
+    fun clearEventListeners() {
+        eventListeners.clear()
     }
      fun sendMessage(code: OpCode, data: Any?) {
         val obj = JSONObject()
@@ -76,6 +84,7 @@ class RavenWebSocket(val token: String) {
     }
 
     fun connect() {
+
         websocket = WebSocketFactory().createSocket("wss://gateway.discord.gg/?v=6&encoding=json&compress=zlib-stream")
         websocket.addListener(object : WebSocketAdapter() {
             @Throws(Exception::class)

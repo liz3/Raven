@@ -4,6 +4,7 @@ import com.savagellc.raven.Data
 import com.savagellc.raven.core.CoreManager
 import com.savagellc.raven.discord.Api
 import com.savagellc.raven.discord.ChannelType
+import com.savagellc.raven.discord.ImageCache
 import com.savagellc.raven.discord.OnlineStatus
 import com.savagellc.raven.gui.controller.ChannelViewController
 import com.savagellc.raven.gui.controller.MainViewController
@@ -14,16 +15,16 @@ import javafx.application.Application
 import javafx.application.Platform
 import javafx.fxml.FXMLLoader
 import javafx.scene.Scene
-import javafx.scene.control.Tab
-import javafx.scene.control.TreeItem
-import javafx.scene.control.TreeView
+import javafx.scene.control.*
 import javafx.scene.control.skin.VirtualFlow
 import javafx.scene.input.KeyCode
 import javafx.scene.input.MouseButton
 import javafx.scene.layout.AnchorPane
 import javafx.scene.layout.BorderPane
 import javafx.stage.Stage
+import org.json.JSONObject
 import java.io.File
+import kotlin.system.exitProcess
 
 class OpenTab(
     val coreManager: CoreManager,
@@ -116,6 +117,8 @@ class OpenTab(
 }
 
 class Manager(val stage: Stage) {
+    val dir = File(System.getProperty("user.home"), ".raven")
+    val file = File(dir, "tkn-f")
     lateinit var coreManager: CoreManager
     lateinit var controller: MainViewController
     var serverDisplayMode = false
@@ -198,8 +201,32 @@ class Manager(val stage: Stage) {
 
         return root
     }
-
-    fun setupGuiEvents() {
+    fun shutdown() {
+        coreManager.api.webSocket.websocket.sendClose()
+        Platform.exit()
+    }
+    fun logout() {
+        Thread {
+            openChats.clear()
+            coreManager.api.webSocket.websocket.sendClose()
+            coreManager.api.webSocket.disposed = true
+            coreManager.api.webSocket.clearEventListeners()
+            coreManager.api.webSocket.heartbeatThread.interrupt()
+            coreManager.api.sendLogout()
+            ImageCache.disposeCache()
+            Data.token = ""
+            this.file.delete()
+            Platform.runLater {
+                stage.close()
+                Manager(Stage()).start()
+            }
+        }.start()
+    }
+    private fun setupGuiEvents() {
+        stage.setOnCloseRequest {
+            shutdown()
+        }
+        setupMainMenu()
         controller.statusComboBox.items.addAll(OnlineStatus.values())
         controller.statusComboBox.selectionModel.select(OnlineStatus.ONLINE)
         controller.statusComboBox.selectionModel.selectedItemProperty().addListener { observable, oldValue, newValue ->
@@ -225,15 +252,15 @@ class Manager(val stage: Stage) {
             }
         }
         controller.openChatsTabView.selectionModel.selectedItemProperty().addListener { _, old, newValue ->
-            if(newValue != null && old != null) {
+            if (newValue != null && old != null) {
                 val find = openChats.values.find { it.guiTab == newValue }
-                if(find != null && find.channel.messages.size > 0) {
-                        val lastId = find.channel.messages.lastElement().id
-                        if(find.channel.lastAck != find.channel.messages.lastElement().id)
-                            Thread {
-                                coreManager.api.sendMessageAckByChannelSwitch(find.channel.id, lastId)
-                            }.start()
-                    }
+                if (find != null && find.channel.messages.size > 0) {
+                    val lastId = find.channel.messages.lastElement().id
+                    if (find.channel.lastAck != find.channel.messages.lastElement().id)
+                        Thread {
+                            coreManager.api.sendMessageAckByChannelSwitch(find.channel.id, lastId)
+                        }.start()
+                }
             }
         }
         controller.serversList.setOnMouseClicked {
@@ -288,22 +315,65 @@ class Manager(val stage: Stage) {
         }.start()
     }
 
+    private fun setupMainMenu() {
+        val menu = controller.mainMenuBar
+        val file = Menu("File")
+        file.items.addAll(getMenuOpt("Logout") {
+            logout()
+        }, getMenuOpt("Close") {
+           shutdown()
+        })
+        menu.menus.add(file)
+        menu.isUseSystemMenuBar = true
+    }
+
+    private fun getMenuOpt(name: String, func: () -> Unit): MenuItem {
+        val item = MenuItem(name)
+        item.setOnAction {
+            func()
+        }
+        return item
+    }
+
     fun start() {
-        val dir = File(System.getProperty("user.home"), ".raven")
         if (!dir.exists()) dir.mkdir()
-        val file = File(dir, "tkn-f")
         if (file.exists()) {
             Data.token = readFile(file).second
             launchGui()
         } else {
             val userName = Prompts.textPrompt("Email", "Enter Email Address")
             val password = Prompts.passPrompt()
-            val data = Api("", true).login(userName, password)
+            if (userName == "" || password == "") exitProcess(0)
+            val localApi = Api("", true)
+            val lgResp = localApi.login(userName, password)
+            if (!lgResp.hasData) {
+                start()
+                return
+            }
+            val data = JSONObject(lgResp.data)
             if (data.has("token")) {
-                val token = data.getString("token")
-                writeFile(token.toByteArray(), file, false, true)
-                Data.token = token
-                launchGui()
+                if (!data.isNull("token")) {
+                    val token = data.getString("token")
+                    writeFile(token.toByteArray(), file, false, true)
+                    Data.token = token
+                    launchGui()
+                } else {
+                    if (data.has("mfa") && data.getBoolean("mfa")) {
+                        val mFaToken = data.getString("ticket")
+                        val totp = Prompts.textPrompt("2FA", "Enter 2FA code")
+                        val mFaResp = localApi.sendTotp(totp, mFaToken)
+                        if (mFaResp.hasData) {
+                            val token = JSONObject(mFaResp.data).getString("token")
+                            writeFile(token.toByteArray(), file, false, true)
+                            Data.token = token
+                            launchGui()
+                        } else {
+                            start()
+                        }
+                    } else {
+                        start()
+                    }
+                }
             }
         }
     }
@@ -314,6 +384,9 @@ class JavaFxBootstrapper : Application() {
         Manager(primaryStage).start()
     }
 
+    override fun stop() {
+        exitProcess(0)
+    }
     companion object {
         fun bootstrap() = launch(JavaFxBootstrapper::class.java)
     }

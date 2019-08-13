@@ -50,7 +50,7 @@ data class Response(
 )
 
 object ImageCache {
-    val saved = HashMap<String, BufferedImage>()
+    private val saved = HashMap<String, BufferedImage>()
     fun getImage(url: String): BufferedImage? {
         if (saved.containsKey(url)) return saved[url]
         val connection = URL(url).openConnection() as HttpsURLConnection
@@ -62,6 +62,9 @@ object ImageCache {
         val img = ImageIO.read(connection.inputStream)
         saved[url] = img
         return saved[url]
+    }
+    fun disposeCache() {
+        saved.clear()
     }
 }
 
@@ -119,7 +122,9 @@ class Api(private val token: String, holdConnect: Boolean = false) {
         val response = request("/users/@me/channels")
         return JSONArray(response.data)
     }
-
+    fun sendTotp(code:String, ticket:String): Response {
+        return request("/v6/auth/mfa/totp", method = "POST", data = JSONObject().put("code", code).put("ticket", ticket).put("gift_code_sku_id", JSONObject.NULL).put("login_source", JSONObject.NULL).toString(), withoutToken = true)
+    }
     fun getGuilds(): JSONArray {
         val response = request("/users/@me/guilds")
         return JSONArray(response.data)
@@ -135,16 +140,18 @@ class Api(private val token: String, holdConnect: Boolean = false) {
         return JSONObject(response.data)
     }
 
-    fun login(email: String, password: String): JSONObject {
+    fun login(email: String, password: String): Response {
         val obj = JSONObject().put("email", email).put("password", password).put("undelete", false)
-        return JSONObject(request("/v6/auth/login", data = obj.toString(), method = "POST", withoutToken = true).data)
+       return request("/v6/auth/login", data = obj.toString(), method = "POST", withoutToken = true)
     }
 
     fun getMessages(channelId: String): Response {
         return request("/channels/$channelId/messages")
 
     }
-
+    fun sendLogout(): Response {
+        return request("/v6/auth/logout", method = "POST", data = JSONObject().put("provider", JSONObject.NULL).put("voip_provider", JSONObject.NULL).toString())
+    }
     fun editMessage(channelId: String, messageId: String, content: String): Response {
         return request(
             "/channels/$channelId/messages/$messageId",

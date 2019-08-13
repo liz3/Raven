@@ -46,13 +46,9 @@ class MediaProxyServer() {
                 respond(
                     exchange, 200,
                     "<style>" +
-                            "body {margin: 0;}" +
+                            "#ytplayer {position: absolute; width: 100vw; height: 100vh; top: 0; left: 0;}" +
                             "</style>" +
-                            "<iframe id=\"ytplayer\" src=\"https://www.youtube.com/embed/$youtubeVideoID?autoplay=1&amp;auto_play=1\" width=\"400\" height=\"225\" frameborder=\"0\"></iframe>" +
-                            "<script>" +
-                            "document.getElementById('ytplayer').width = window.outerWidth;" +
-                            "document.getElementById('ytplayer').height = window.outerHeight;" +
-                            "</script>",
+                            "<iframe id=\"ytplayer\" src=\"https://www.youtube.com/embed/$youtubeVideoID?autoplay=1&amp;auto_play=1\" frameborder=\"0\"></iframe>",
                     "text/html; charset=utf-8"
                 )
             else

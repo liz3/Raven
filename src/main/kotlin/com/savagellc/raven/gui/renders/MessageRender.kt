@@ -209,19 +209,13 @@ fun render(
                                         webView!!.engine.reload()
                                     } else {
 
-                                        val youtubeVideoID = it.getJSONObject("video").getString("url").split("/").last()
+                                        val youtubeVideoID =
+                                            it.getJSONObject("video").getString("url").split("/").last()
 
                                         val renderer = WebView()
-                                        renderer.prefWidth = imageView!!.fitWidth
+                                        renderer.prefWidth = imageView.fitWidth
                                         renderer.prefHeight = 430.0
                                         renderer.engine.load("http://localhost:${coreManager.mediaProxyServer.port}/youtube/$youtubeVideoID")
-                                        /*renderer.engine.loadWorker.stateProperty()
-                                            .addListener { observable, oldValue, newValue ->
-                                                if (newValue == Worker.State.SUCCEEDED) {
-                                                    if (switched)
-                                                        renderer.engine.executeScript("document.querySelector(\".ytp-cued-thumbnail-overlay-image\").click()")
-                                                }
-                                            }*/
                                         webView = renderer
                                     }
                                     childBox.children[previewIndex] = webView

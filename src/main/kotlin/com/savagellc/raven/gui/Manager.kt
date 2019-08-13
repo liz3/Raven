@@ -18,6 +18,8 @@ import javafx.scene.Scene
 import javafx.scene.control.*
 import javafx.scene.control.skin.VirtualFlow
 import javafx.scene.input.KeyCode
+import javafx.scene.input.KeyCodeCombination
+import javafx.scene.input.KeyCombination
 import javafx.scene.input.MouseButton
 import javafx.scene.layout.AnchorPane
 import javafx.scene.layout.BorderPane
@@ -208,7 +210,7 @@ class Manager(val stage: Stage) {
         return root
     }
 
-    private fun shutdown() {
+    private fun quit() {
         coreManager.api.webSocket.websocket.sendClose()
         Platform.exit()
     }
@@ -233,7 +235,7 @@ class Manager(val stage: Stage) {
 
     private fun setupGuiEvents() {
         stage.setOnCloseRequest {
-            shutdown()
+            quit()
         }
         setupMainMenu()
         controller.statusComboBox.items.addAll(OnlineStatus.values())
@@ -326,35 +328,37 @@ class Manager(val stage: Stage) {
     private fun setupMainMenu() {
         val menu = controller.mainMenuBar
         val file = Menu("File")
-        file.items.addAll(getMenuOpt("Logout") {
+        file.items.addAll(createMenuOption("Logout") {
             logout()
-        }, getMenuOpt("Close") {
-            shutdown()
-        }, getMenuOpt("Attach Debugger") {
+        }, createMenuOption("Attach Debugger") {
             val d = EventLogger()
             coreManager.api.attachDebugger(d)
+        }, createMenuOption("Quit", KeyCodeCombination(KeyCode.Q, KeyCombination.CONTROL_DOWN)) {
+            quit()
         })
         val options = Menu("Settings")
 
-            options.items.add(getMenuOpt("Toggle message delete prevent") {
-                Data.options.preventMessageDelete = !Data.options.preventMessageDelete
-            })
-        options.items.add(getMenuOpt("Toggle channel delete prevent") {
-                Data.options.preventChannelDelete = !Data.options.preventChannelDelete
-            })
-     options.items.add(getMenuOpt("Toggle message update prevent") {
-                Data.options.preventMessageUpdate = !Data.options.preventMessageUpdate
-            })
+        options.items.add(createMenuOption("Toggle message delete prevent") {
+            Data.options.preventMessageDelete = !Data.options.preventMessageDelete
+        })
+        options.items.add(createMenuOption("Toggle channel delete prevent") {
+            Data.options.preventChannelDelete = !Data.options.preventChannelDelete
+        })
+        options.items.add(createMenuOption("Toggle message update prevent") {
+            Data.options.preventMessageUpdate = !Data.options.preventMessageUpdate
+        })
 
         menu.menus.addAll(file, options)
         menu.isUseSystemMenuBar = true
     }
 
-    private fun getMenuOpt(name: String, func: () -> Unit): MenuItem {
+    private fun createMenuOption(name: String, keyCombination: KeyCombination? = null, func: () -> Unit): MenuItem {
         val item = MenuItem(name)
         item.setOnAction {
             func()
         }
+        if (keyCombination != null)
+            item.accelerator = keyCombination
         return item
     }
 

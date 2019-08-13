@@ -45,4 +45,4 @@ $ ./gradlew shadowJar
 ```
 
 ## License
-This is software is free software licensed under [GPL 2.0](LICENSE).
+This software is free software licensed under [GPL 2.0](LICENSE).

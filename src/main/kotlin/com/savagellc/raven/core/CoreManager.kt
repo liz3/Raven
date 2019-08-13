@@ -7,6 +7,7 @@ import com.savagellc.raven.gui.Manager
 import com.savagellc.raven.gui.OpenTab
 import com.savagellc.raven.gui.Prompts
 import com.savagellc.raven.include.*
+import com.savagellc.raven.utils.MediaProxyServer
 import javafx.application.Platform
 import javafx.scene.control.Alert
 import org.json.JSONArray
@@ -16,6 +17,7 @@ import kotlin.collections.HashMap
 
 class CoreManager(val guiManager: Manager) {
     val api = Api(Data.token)
+    val mediaProxyServer = MediaProxyServer()
     lateinit var me: Me
     val chats = Vector<PrivateChat>()
     val servers = Vector<Server>()

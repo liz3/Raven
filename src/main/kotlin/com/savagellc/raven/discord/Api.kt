@@ -13,6 +13,9 @@ import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.MediaType.Companion.toMediaType
 
+const val USER_AGENT =
+    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) discord/0.0.9 Chrome/69.0.3497.128 Electron/4.0.8 Safari/537.36" // UA of Discord 0.0.9 on Linux
+
 enum class RelationStatus(val n: Int) {
     FRIENDS(1),
     INCOMING(3),
@@ -56,13 +59,14 @@ object ImageCache {
         val connection = URL(url).openConnection() as HttpsURLConnection
         connection.doOutput = true
         connection.setRequestProperty(
-            "User-agent",
-            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3770.145 Safari/537.36 Vivaldi/2.6.1566.49"
+            "User-Agent",
+            USER_AGENT
         )
         val img = ImageIO.read(connection.inputStream)
         saved[url] = img
         return saved[url]
     }
+
     fun disposeCache() {
         saved.clear()
     }
@@ -71,7 +75,7 @@ object ImageCache {
 class Api(private val token: String, holdConnect: Boolean = false) {
     val webSocket = RavenWebSocket(token, this)
     val client = OkHttpClient()
-    lateinit var debugger:EventLogger
+    lateinit var debugger: EventLogger
     var hasDebugger = false
 
 
@@ -85,14 +89,14 @@ class Api(private val token: String, holdConnect: Boolean = false) {
         contentType: String = "application/json",
         method: String = "GET",
         data: String? = null,
-        withoutToken: Boolean = false
+        authorized: Boolean = true
     ): Response {
 
-        val request = if (withoutToken) Request.Builder()
+        val request = if (!authorized) Request.Builder()
             .url("https://discordapp.com/api$path")
             .addHeader(
-                "User-agent",
-                "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3770.145 Safari/537.36 Vivaldi/2.6.1566.49"
+                "User-Agent",
+                USER_AGENT
             )
             .method(method, data?.toRequestBody(contentType.toMediaType()))
             .build()
@@ -100,8 +104,8 @@ class Api(private val token: String, holdConnect: Boolean = false) {
             Request.Builder()
                 .url("https://discordapp.com/api$path")
                 .addHeader(
-                    "User-agent",
-                    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3770.145 Safari/537.36 Vivaldi/2.6.1566.49"
+                    "User-Agent",
+                    USER_AGENT
                 )
                 .addHeader("Authorization", token)
                 .method(method, data?.toRequestBody(contentType.toMediaType()))
@@ -112,30 +116,46 @@ class Api(private val token: String, holdConnect: Boolean = false) {
         val respObj = Response(
             resp.code,
             resp.code == 200,
-           b,
+            b,
             resp.headers,
             b
         )
-        if(hasDebugger) debugger.pushApiUpdate(path, method, respObj, data)
+        if (hasDebugger) debugger.pushApiUpdate(path, method, respObj, data)
 
         return respObj
     }
 
-    fun attachDebugger(logger:EventLogger) {
+    fun attachDebugger(logger: EventLogger) {
         debugger = logger
         hasDebugger = true
     }
-    fun sendMessageAckByChannelSwitch(channelId:String, messageId: String) {
+
+    fun sendMessageAckByChannelSwitch(channelId: String, messageId: String) {
         webSocket.sendMessage(OpCode.CHANNEL_SWITCH, JSONObject().put("channel_id", channelId))
-        request("/channels/$channelId/messages/$messageId/ack", method = "POST", data = JSONObject().put("token", JSONObject.NULL).toString())
+        request(
+            "/channels/$channelId/messages/$messageId/ack",
+            method = "POST",
+            data = JSONObject().put("token", JSONObject.NULL).toString()
+        )
     }
+
     fun getDmChannels(): JSONArray {
         val response = request("/users/@me/channels")
         return JSONArray(response.data)
     }
-    fun sendTotp(code:String, ticket:String): Response {
-        return request("/v6/auth/mfa/totp", method = "POST", data = JSONObject().put("code", code).put("ticket", ticket).put("gift_code_sku_id", JSONObject.NULL).put("login_source", JSONObject.NULL).toString(), withoutToken = true)
+
+    fun sendTotp(code: String, ticket: String): Response {
+        return request(
+            "/v6/auth/mfa/totp",
+            method = "POST",
+            data = JSONObject().put("code", code).put("ticket", ticket).put(
+                "gift_code_sku_id",
+                JSONObject.NULL
+            ).put("login_source", JSONObject.NULL).toString(),
+            authorized = false
+        )
     }
+
     fun getGuilds(): JSONArray {
         val response = request("/users/@me/guilds")
         return JSONArray(response.data)
@@ -153,16 +173,22 @@ class Api(private val token: String, holdConnect: Boolean = false) {
 
     fun login(email: String, password: String): Response {
         val obj = JSONObject().put("email", email).put("password", password).put("undelete", false)
-       return request("/v6/auth/login", data = obj.toString(), method = "POST", withoutToken = true)
+        return request("/v6/auth/login", data = obj.toString(), method = "POST", authorized = false)
     }
 
     fun getMessages(channelId: String): Response {
         return request("/channels/$channelId/messages")
 
     }
+
     fun sendLogout(): Response {
-        return request("/v6/auth/logout", method = "POST", data = JSONObject().put("provider", JSONObject.NULL).put("voip_provider", JSONObject.NULL).toString())
+        return request(
+            "/v6/auth/logout",
+            method = "POST",
+            data = JSONObject().put("provider", JSONObject.NULL).put("voip_provider", JSONObject.NULL).toString()
+        )
     }
+
     fun editMessage(channelId: String, messageId: String, content: String): Response {
         return request(
             "/channels/$channelId/messages/$messageId",

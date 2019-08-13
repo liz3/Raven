@@ -6,7 +6,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.util.*
 
-open class Channel(val rootObject:JSONObject) {
+open class Channel(val rootObject: JSONObject) {
     val id = rootObject.getString("id")
     val messages = Vector<GuiMessage>()
     var hasLoadedAll = false
@@ -25,7 +25,7 @@ open class Channel(val rootObject:JSONObject) {
                 )
             )
         }
-        if(lastAck == "") {
+        if (lastAck == "") {
             lastAck = messages.lastElement().id
             Thread {
                 coreManager.api.sendMessageAckByChannelSwitch(id, messages.lastElement().id)

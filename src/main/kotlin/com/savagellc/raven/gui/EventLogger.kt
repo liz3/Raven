@@ -17,6 +17,7 @@ class EventLogger {
     var dispsed = false
     val cached = Vector<String>()
     var messages = 0
+
     init {
         area.isEditable = false
         val stage = Stage()
@@ -24,7 +25,7 @@ class EventLogger {
         val pane = BorderPane()
         pane.center = area
         pane.bottom = getLowerBox()
-       val scene =  Scene(pane, 800.0, 600.0)
+        val scene = Scene(pane, 800.0, 600.0)
         scene.stylesheets.add("/css/DarkStyle.css")
         stage.scene = scene
         stage.setOnCloseRequest {
@@ -34,18 +35,19 @@ class EventLogger {
 
         stage.show()
     }
-    private fun push(message:String) {
-        if(dispsed) return
-        if(paused) {
+
+    private fun push(message: String) {
+        if (dispsed) return
+        if (paused) {
             cached.add(message)
         } else {
             Platform.runLater {
                 messages++;
                 area.appendText(message)
-                if(messages > 4300) {
+                if (messages > 4300) {
                     var count = 0;
                     val length = area.text.takeWhile {
-                        if(it == '\n') count++
+                        if (it == '\n') count++
                         count < 100
                     }.length
                     area.text = area.text.substring(length)
@@ -54,24 +56,29 @@ class EventLogger {
             }
         }
     }
-    fun pushApiUpdate(path: String, method:String, response:Response, requestBody:String?) {
-        val message = "HTTP: [$method]$path${if(requestBody != null) "\n REQ> $requestBody" else ""}\n${response.code} RESP>${response.data}\n\n"
+
+    fun pushApiUpdate(path: String, method: String, response: Response, requestBody: String?) {
+        val message =
+            "HTTP: [$method]$path${if (requestBody != null) "\n REQ> $requestBody" else ""}\n${response.code} RESP>${response.data}\n\n"
         push(message)
     }
-    fun pushSockUp(op:OpCode, data: Any?) {
+
+    fun pushSockUp(op: OpCode, data: Any?) {
         val message = "SOCK PUSH: [$op:${op.num}] $data\n"
         push(message)
     }
-    fun pushSockDown(op:Int, data: Any?) {
+
+    fun pushSockDown(op: Int, data: Any?) {
         val message = "SOCK RECEIVE: [$op] $data\n"
         push(message)
     }
+
     private fun getLowerBox(): HBox {
         val box = HBox()
         val pauseBtn = Button("Pause")
         pauseBtn.setOnAction {
             paused = !paused
-            if(!paused) {
+            if (!paused) {
                 Platform.runLater {
                     messages += cached.size
                     val joined = cached.joinToString("")

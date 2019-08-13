@@ -24,7 +24,9 @@ fun deleteDirectoryRecursion(path: Path) {
     Files.delete(path)
 }
 
-fun writeFile(data: ByteArray, path: String, append: Boolean = false, createIfNotExists: Boolean = false) = writeFile(data, File(path), append, createIfNotExists)
+fun writeFile(data: ByteArray, path: String, append: Boolean = false, createIfNotExists: Boolean = false) =
+    writeFile(data, File(path), append, createIfNotExists)
+
 fun writeFile(data: ByteArray, path: String) = writeFile(data, File(path))
 
 fun readFile(path: String) = readFile(File(path))
@@ -46,7 +48,12 @@ fun readFile(file: File): Pair<FileReturnResult, String> {
 }
 
 
-fun writeFile(data: ByteArray, file: File, append: Boolean = false, createIfNotExists: Boolean = false): Pair<FileReturnResult, String> {
+fun writeFile(
+    data: ByteArray,
+    file: File,
+    append: Boolean = false,
+    createIfNotExists: Boolean = false
+): Pair<FileReturnResult, String> {
 
     if (!createIfNotExists && !file.exists())
         return Pair(FileReturnResult.NOT_FOUND, "")

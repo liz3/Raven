@@ -38,11 +38,11 @@ class GuiMessage(
     var revisions = 1
     var hasUpdate = false
     lateinit var cachedUpdates: Vector<Triple<HBox, Label, VBox>>
-    fun pushContentUpdate(updatedContent:String?, embeds:JSONArray?, attachments:JSONArray?) {
-       if(updatedContent != null) content = updatedContent
-        if(embeds != null) this.embeds = embeds
-        if(attachments != null) this.attachments = attachments
-        if(!Data.options.preventMessageUpdate) {
+    fun pushContentUpdate(updatedContent: String?, embeds: JSONArray?, attachments: JSONArray?) {
+        if (updatedContent != null) content = updatedContent
+        if (embeds != null) this.embeds = embeds
+        if (attachments != null) this.attachments = attachments
+        if (!Data.options.preventMessageUpdate) {
             Platform.runLater {
                 val result = render(this, guiObject.controller.messagesList, coreManager, renderSeparator)
                 hBox.third.children.clear()
@@ -50,7 +50,7 @@ class GuiMessage(
             }
         } else {
             Platform.runLater {
-                if(!this::cachedUpdates.isInitialized) cachedUpdates = Vector()
+                if (!this::cachedUpdates.isInitialized) cachedUpdates = Vector()
                 cachedUpdates.add(render(this, guiObject.controller.messagesList, coreManager, renderSeparator))
                 hasUpdate = true
                 hBox.first.border = Border(
@@ -63,8 +63,9 @@ class GuiMessage(
         }
 
     }
+
     fun pushRemove() {
-        if(Data.options.preventMessageDelete) {
+        if (Data.options.preventMessageDelete) {
             hBox.first.border = Border(
                 BorderStroke(
                     Color.RED,
@@ -76,16 +77,17 @@ class GuiMessage(
         coreManager.messageIndex.remove(id)
         channel.messages.remove(this)
 
-            Platform.runLater {
-                guiObject.controller.messagesList.items.remove(hBox.first)
-                    guiObject.controller.messagesList.refresh()
-            }
+        Platform.runLater {
+            guiObject.controller.messagesList.items.remove(hBox.first)
+            guiObject.controller.messagesList.refresh()
+        }
 
     }
-    fun showUpdate(append:Boolean) {
-        if(!hasUpdate) return
+
+    fun showUpdate(append: Boolean) {
+        if (!hasUpdate) return
         hasUpdate = false
-        if(!append) {
+        if (!append) {
             hBox.third.children.clear()
             revisions++
             hBox.third.children.addAll(cachedUpdates.last().third.children)
@@ -101,13 +103,14 @@ class GuiMessage(
         hBox.first.border = null
 
     }
+
     fun editMode() {
-        if(!isEditMode) {
+        if (!isEditMode) {
             isEditMode = true
             Platform.runLater {
                 editorField = TextField(content)
                 editorField.setOnKeyPressed {
-                    if(it.code == KeyCode.ENTER) {
+                    if (it.code == KeyCode.ENTER) {
                         coreManager.editMessage(this, editorField.text, channel.id) {
                             Platform.runLater {
                                 hBox.third.children.remove(editorField)
@@ -116,24 +119,27 @@ class GuiMessage(
                         }
                         return@setOnKeyPressed
                     }
-                    if(it.code == KeyCode.ESCAPE) {
+                    if (it.code == KeyCode.ESCAPE) {
                         hBox.third.children.remove(editorField)
                         isEditMode = false
                     }
                 }
-              hBox.third.children.add(editorField)
+                hBox.third.children.add(editorField)
             }
         } else {
             hBox.third.children.remove(editorField)
             isEditMode = false
         }
     }
+
     fun deleteMessage() {
         coreManager.deleteMessage(this, channel.id) {}
     }
+
     override fun toString(): String {
         return "$senderName> $content"
     }
+
     fun getRendered(messagesList: ListView<HBox>): HBox {
         hBox = render(this, messagesList, coreManager, renderSeparator)
         coreManager.messageIndex[this.id] = this

@@ -4,7 +4,7 @@ import com.savagellc.raven.core.CoreManager
 import com.savagellc.raven.discord.ImageCache
 import com.savagellc.raven.gui.MessageMenu
 import com.savagellc.raven.gui.browse
-import com.savagellc.raven.gui.cursourOnHover
+import com.savagellc.raven.gui.cursorOnHover
 import com.savagellc.raven.include.GuiMessage
 import javafx.application.Platform
 import javafx.concurrent.Task
@@ -21,9 +21,6 @@ import javafx.scene.layout.Priority
 import javafx.scene.layout.VBox
 import org.json.JSONArray
 import org.json.JSONObject
-import java.awt.Desktop
-import java.lang.ref.SoftReference
-import java.net.URI
 
 
 const val maxImageWidth = 1000.0
@@ -38,7 +35,7 @@ fun getLabel(content: String, style: String = "", isUnderLined: Boolean = false)
 
 fun getLabel(content: String, style: String = "", isUnderLined: Boolean = false, cb: () -> Unit): Label {
     val label = Label(content)
-    cursourOnHover(label)
+    cursorOnHover(label)
     label.setOnMouseClicked {
         cb()
     }
@@ -50,7 +47,7 @@ fun getLabel(content: String, style: String = "", isUnderLined: Boolean = false,
 }
 
 fun appendClick(label: Label, cb: () -> Unit) {
-    cursourOnHover(label)
+    cursorOnHover(label)
     label.setOnMouseClicked {
         cb()
     }
@@ -179,7 +176,7 @@ fun render(
         val childBox = VBox()
         childBox.padding = Insets(0.0, 0.0, 0.0, 10.0)
         var previewIndex = -1
-        cursourOnHover(childBox)
+        cursorOnHover(childBox)
         if (it.has("url") && !it.isNull("url")) {
             if (it.has("title")) childBox.children.add(getLabel(it.getString("title"), "-fx-font-size: 15;", true) {
                 browse(it.getString("url"))
@@ -231,7 +228,7 @@ fun render(
                         }
                     } else {
                         if (it.has("url") && !it.isNull("url")) {
-                            cursourOnHover(imageView)
+                            cursorOnHover(imageView)
                             imageView.setOnMouseClicked { ev ->
                                 browse(it.getString("url"))
 

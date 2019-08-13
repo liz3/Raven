@@ -28,7 +28,7 @@ enum class OpCode(val num: Int) {
     CHANNEL_SWITCH(13)
 }
 
-class RavenWebSocket(val token: String) {
+class RavenWebSocket(val token: String, val api: Api) {
     lateinit var websocket: WebSocket
     val zlibContext = Inflater()
     private val eventListeners = Vector<Pair<String, (JSONObject) -> Unit>>()
@@ -56,6 +56,9 @@ class RavenWebSocket(val token: String) {
         val obj = JSONObject()
         obj.put("op", code.num)
         obj.put("d", data)
+         if(api.hasDebugger) api.debugger.pushSockUp(code, data)
+
+
         websocket.sendText(obj.toString())
 
     }
@@ -134,13 +137,14 @@ class RavenWebSocket(val token: String) {
 
     fun onMessage(raw: JSONObject) {
         requests++
-        when (raw.getInt("op")) {
+        val code = raw.getInt("op")
+        if(api.hasDebugger) api.debugger.pushSockDown(code, raw)
+        when (code) {
             OpCode.HEARTBEAT_ACK.num -> {
             }
             OpCode.DISPATCH.num -> {
                 val message = raw.getJSONObject("d")
                 val type = raw.getString("t")
-               println(type)
                 eventListeners.forEach {
                     if(it.first == type) it.second(message)
                 }

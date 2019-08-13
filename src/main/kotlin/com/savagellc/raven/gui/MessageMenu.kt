@@ -6,6 +6,7 @@ import com.savagellc.raven.include.Server
 import javafx.application.Platform
 import javafx.scene.control.ContextMenu
 import javafx.scene.control.ListView
+import javafx.scene.control.Menu
 import javafx.scene.control.MenuItem
 import javafx.scene.layout.HBox
 
@@ -46,11 +47,21 @@ object MessageMenu {
             }
             menu.items.add(createDm)
         }
+        if(message.hasUpdate) {
+            val showUpdate = MenuItem("Show updated message")
+            showUpdate.setOnAction {
+                message.showUpdate(false)
+            }
+            val showUpdateAppend = MenuItem("Append Message Revision")
+            showUpdateAppend.setOnAction {
+                message.showUpdate(true)
+            }
+            menu.items.addAll(showUpdate, showUpdateAppend)
+        }
 
-        Platform.runLater {
             menu.show(messagesList, x, y)
             visible = true
-        }
+
     }
 }
 

@@ -1,17 +1,21 @@
 package com.savagellc.raven.include
 
+import com.savagellc.raven.Data
 import com.savagellc.raven.core.CoreManager
 import com.savagellc.raven.gui.OpenTab
+import com.savagellc.raven.gui.renders.getLabel
 import com.savagellc.raven.gui.renders.render
 import javafx.application.Platform
 import javafx.scene.control.Label
 import javafx.scene.control.ListView
 import javafx.scene.control.TextField
 import javafx.scene.input.KeyCode
-import javafx.scene.layout.HBox
-import javafx.scene.layout.VBox
+import javafx.scene.layout.*
+import javafx.scene.paint.Color
 import org.json.JSONArray
 import org.json.JSONObject
+import java.util.*
+
 
 class GuiMessage(
     val rootObj: JSONObject,
@@ -31,17 +35,44 @@ class GuiMessage(
     private lateinit var editorField: TextField
     var renderSeparator = false
     var isEditMode = false
+    var revisions = 1
+    var hasUpdate = false
+    lateinit var cachedUpdates: Vector<Triple<HBox, Label, VBox>>
     fun pushContentUpdate(updatedContent:String?, embeds:JSONArray?, attachments:JSONArray?) {
        if(updatedContent != null) content = updatedContent
         if(embeds != null) this.embeds = embeds
         if(attachments != null) this.attachments = attachments
-      Platform.runLater {
-          val result = render(this, guiObject.controller.messagesList, coreManager, renderSeparator)
-          hBox.third.children.clear()
-          hBox.third.children.addAll(result.third.children)
-      }
+        if(!Data.options.preventMessageUpdate) {
+            Platform.runLater {
+                val result = render(this, guiObject.controller.messagesList, coreManager, renderSeparator)
+                hBox.third.children.clear()
+                hBox.third.children.addAll(result.third.children)
+            }
+        } else {
+            Platform.runLater {
+                if(!this::cachedUpdates.isInitialized) cachedUpdates = Vector()
+                cachedUpdates.add(render(this, guiObject.controller.messagesList, coreManager, renderSeparator))
+                hasUpdate = true
+                hBox.first.border = Border(
+                    BorderStroke(
+                        Color.BLUE,
+                        BorderStrokeStyle.SOLID, CornerRadii.EMPTY, BorderWidths.DEFAULT
+                    )
+                )
+            }
+        }
+
     }
     fun pushRemove() {
+        if(Data.options.preventMessageDelete) {
+            hBox.first.border = Border(
+                BorderStroke(
+                    Color.RED,
+                    BorderStrokeStyle.SOLID, CornerRadii.EMPTY, BorderWidths.DEFAULT
+                )
+            )
+            return
+        }
         coreManager.messageIndex.remove(id)
         channel.messages.remove(this)
 
@@ -49,6 +80,25 @@ class GuiMessage(
                 guiObject.controller.messagesList.items.remove(hBox.first)
                     guiObject.controller.messagesList.refresh()
             }
+
+    }
+    fun showUpdate(append:Boolean) {
+        if(!hasUpdate) return
+        hasUpdate = false
+        if(!append) {
+            hBox.third.children.clear()
+            revisions++
+            hBox.third.children.addAll(cachedUpdates.last().third.children)
+        } else {
+            cachedUpdates.forEach {
+                revisions++
+                it.third.children[0] = getLabel("Revision $revisions", isUnderLined = true)
+                hBox.third.children.addAll(it.third.children)
+            }
+
+        }
+        cachedUpdates.clear()
+        hBox.first.border = null
 
     }
     fun editMode() {

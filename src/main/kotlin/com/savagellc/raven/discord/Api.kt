@@ -1,7 +1,7 @@
 package com.savagellc.raven.discord
 
+import com.savagellc.raven.gui.EventLogger
 import okhttp3.Headers
-import okhttp3.MediaType
 import org.json.JSONArray
 import org.json.JSONObject
 import java.awt.image.BufferedImage
@@ -69,8 +69,10 @@ object ImageCache {
 }
 
 class Api(private val token: String, holdConnect: Boolean = false) {
-    val webSocket = RavenWebSocket(token)
+    val webSocket = RavenWebSocket(token, this)
     val client = OkHttpClient()
+    lateinit var debugger:EventLogger
+    var hasDebugger = false
 
 
     init {
@@ -106,13 +108,22 @@ class Api(private val token: String, holdConnect: Boolean = false) {
                 .build()
         val resp = client.newCall(request).execute()
         val b = resp.body!!.string()
-        return Response(
+
+        val respObj = Response(
             resp.code,
             resp.code == 200,
            b,
             resp.headers,
             b
         )
+        if(hasDebugger) debugger.pushApiUpdate(path, method, respObj, data)
+
+        return respObj
+    }
+
+    fun attachDebugger(logger:EventLogger) {
+        debugger = logger
+        hasDebugger = true
     }
     fun sendMessageAckByChannelSwitch(channelId:String, messageId: String) {
         webSocket.sendMessage(OpCode.CHANNEL_SWITCH, JSONObject().put("channel_id", channelId))

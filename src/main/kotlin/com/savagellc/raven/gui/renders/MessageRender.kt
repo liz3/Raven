@@ -23,7 +23,7 @@ import java.lang.ref.SoftReference
 
 
 const val maxImageWidth = 1000.0
-private fun getLabel(content: String, style: String = "", isUnderLined: Boolean = false): Label {
+fun getLabel(content: String, style: String = "", isUnderLined: Boolean = false): Label {
     val label = Label(content)
     label.isWrapText = true;
     if (style.isNotEmpty()) label.style = style
@@ -66,7 +66,7 @@ fun render(
     val rootBox = HBox()
     rootBox.style = "-fx-padding: 0 15 0 0;"
     if (renderSeparator) {
-        rootBox.style += "-fx-border-color: red; -fx-border-width: 2 0 0 0"
+        rootBox.style += "-fx-border-color: grey; -fx-border-width: 2 0 0 0"
     }
     rootBox.setOnMouseClicked {
         MessageMenu.openMenu(

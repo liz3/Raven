@@ -45,6 +45,7 @@ class OpenTab(
     }
 
     private fun setupGuiEvents() {
+        controller.messagesList.isFocusTraversable = false
         controller.sendMessageTextField.setOnKeyPressed {
             if (it.code == KeyCode.ENTER) {
                 coreManager.sendMessage(controller.sendMessageTextField.text, this) {
@@ -106,7 +107,6 @@ class OpenTab(
 
     fun prepend(messages: List<GuiMessage>) {
         if (messages.isEmpty()) return
-        val first = controller.messagesList.items.first()
         Platform.runLater {
             messages.reversed().last().renderSeparator = true
             controller.messagesList.items.addAll(0, messages.reversed().map { it.getRendered(controller.messagesList) })
@@ -154,7 +154,7 @@ class Manager(val stage: Stage) {
         }
     }
 
-    fun loadChat(channel: Channel) {
+    private fun loadChat(channel: Channel) {
         if (openChats.containsKey(channel.id)) {
             Platform.runLater {
                 controller.openChatsTabView.selectionModel.select(openChats[channel.id]!!.guiTab)
@@ -330,8 +330,23 @@ class Manager(val stage: Stage) {
             logout()
         }, getMenuOpt("Close") {
             shutdown()
+        }, getMenuOpt("Attach Debugger") {
+            val d = EventLogger()
+            coreManager.api.attachDebugger(d)
         })
-        menu.menus.add(file)
+        val options = Menu("Settings")
+
+            options.items.add(getMenuOpt("Toggle message delete prevent") {
+                Data.options.preventMessageDelete = !Data.options.preventMessageDelete
+            })
+        options.items.add(getMenuOpt("Toggle channel delete prevent") {
+                Data.options.preventChannelDelete = !Data.options.preventChannelDelete
+            })
+     options.items.add(getMenuOpt("Toggle message update prevent") {
+                Data.options.preventMessageUpdate = !Data.options.preventMessageUpdate
+            })
+
+        menu.menus.addAll(file, options)
         menu.isUseSystemMenuBar = true
     }
 

@@ -1,20 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.scene.layout.BorderPane?>
-
-
-<?import javafx.scene.layout.HBox?>
-<?import javafx.scene.control.TextField?>
 <?import javafx.scene.control.ListView?>
-<BorderPane fx:id="viewerBorderPane" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.savagellc.raven.gui.controller.ChannelViewController" >
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+
+<BorderPane fx:id="viewerBorderPane" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="100.0" minWidth="100.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.savagellc.raven.gui.controller.ChannelViewController">
         <bottom>
             <HBox prefHeight="35.0" prefWidth="400.0" BorderPane.alignment="CENTER">
                 <children>
-                    <TextField fx:id="sendMessageTextField" prefHeight="40.0" prefWidth="406.0" HBox.hgrow="ALWAYS" />
+                    <TextField fx:id="sendMessageTextField" prefHeight="49.0" prefWidth="600.0" HBox.hgrow="ALWAYS" />
                 </children>
             </HBox>
         </bottom>
         <center>
-            <ListView fx:id="messagesList" prefHeight="400.0" prefWidth="381.0" BorderPane.alignment="CENTER" />
+            <ListView fx:id="messagesList" minHeight="0.0" minWidth="0.0" BorderPane.alignment="CENTER" />
         </center>
 </BorderPane>

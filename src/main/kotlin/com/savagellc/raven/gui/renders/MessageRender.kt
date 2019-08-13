@@ -21,13 +21,14 @@ import javafx.scene.layout.VBox
 import org.json.JSONObject
 import java.lang.ref.SoftReference
 
-const val maxImageWidth = 500.0
 
+const val maxImageWidth = 1000.0
 private fun getLabel(content:String, style:String = "", isUnderLined:Boolean = false): Label {
     val label = Label(content)
     label.isWrapText = true;
     if(style.isNotEmpty()) label.style = style
     label.isUnderline = isUnderLined
+    label.maxWidth = maxImageWidth - 80
     return label
 }
 private fun addUserImage(
@@ -60,9 +61,9 @@ fun render(
     renderSeparator: Boolean
 ): Triple<HBox, Label, VBox> {
     val rootBox = HBox()
-
+    rootBox.style = "-fx-padding: 0 15 0 0"
     if(renderSeparator) {
-        rootBox.style = "-fx-border-color: red; -fx-border-width: 2 0 0 0"
+        rootBox.style += "-fx-border-color: red; -fx-border-width: 2 0 0 0"
     }
     rootBox.setOnMouseClicked {
             MessageMenu.openMenu(message, it.screenX, it.screenY, coreManager, messagesList, it.button == MouseButton.SECONDARY)
@@ -93,7 +94,7 @@ fun render(
     message.attachments.forEach {
         it as JSONObject
         val childBox = VBox()
-        childBox.padding = Insets(5.0, 5.0, 5.0, 10.0)
+        childBox.padding = Insets(0.0, 0.0, 0.0, 10.0)
         if(it.has("title")) childBox.children.add(getLabel(it.getString("title"), "-fx-font-size: 15;", true))
         if(it.has("description"))  childBox.children.add(getLabel(it.getString("description")))
         if(it.has("url")) {
@@ -104,10 +105,10 @@ fun render(
                     val imageView = ImageView(SwingFXUtils.toFXImage(ImageCache.getImage(url), null))
                     imageView.isPreserveRatio = true
                     Platform.runLater {
-                        imageView.fitWidth = if(messagesList.width < lW) messagesList.width else if (lW <= maxImageWidth) lW else  maxImageWidth
+                        imageView.fitWidth = if(messagesList.width < lW - 100) messagesList.width - 100 else maxImageWidth - 100
                         messagesList.widthProperty().addListener { observable, oldValue, newValue ->
-                            if(newValue.toDouble() <= lW && newValue.toDouble() <= maxImageWidth)
-                                imageView.fitWidth = newValue.toDouble()
+                            if(newValue.toDouble() <=  maxImageWidth - 100)
+                                imageView.fitWidth = newValue.toDouble() - 100
                         }
                         childBox.children.add(imageView)
 
@@ -125,9 +126,8 @@ fun render(
     message.embeds.forEach {
         it as JSONObject
         val childBox = VBox()
-        childBox.padding = Insets(5.0, 5.0, 5.0, 10.0)
+        childBox.padding = Insets(0.0, 0.0, 0.0, 10.0)
         var previewIndex = -1
-        childBox.padding = Insets(5.0, 5.0, 5.0, 10.0)
         if(it.has("title")) childBox.children.add(getLabel(it.getString("title"), "-fx-font-size: 15;", true))
         if(it.has("description"))  childBox.children.add(getLabel(it.getString("description")))
         if(it.has("video") && !it.isNull("video")) {
@@ -173,10 +173,10 @@ fun render(
                     val lW = it.getJSONObject("thumbnail").getInt("width").toDouble()
                     imageView.isPreserveRatio = true
                     Platform.runLater {
-                        imageView.fitWidth = if(messagesList.width < lW) messagesList.width else if (lW <= maxImageWidth) lW else  maxImageWidth
+                        imageView.fitWidth = if(messagesList.width < lW - 100) messagesList.width - 100 else maxImageWidth - 100
                         messagesList.widthProperty().addListener { observable, oldValue, newValue ->
-                            if(newValue.toDouble() <= lW && newValue.toDouble() <= maxImageWidth)
-                                imageView.fitWidth = newValue.toDouble()
+                            if(newValue.toDouble() <= maxImageWidth - 100)
+                                imageView.fitWidth = newValue.toDouble() - 100
                         }
                         childBox.children.add(imageView)
                         previewIndex = childBox.children.indexOf(imageView)

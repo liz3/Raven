@@ -140,6 +140,8 @@ class Manager(val stage: Stage) {
         val parent = loader.load<BorderPane>(javaClass.getResourceAsStream("/fxml/MainView.fxml"))
         controller = loader.getController() as MainViewController
         val scene = Scene(parent)
+        stage.minWidth = 400.0
+        stage.minHeight = 300.0
         scene.stylesheets.add("/css/DarkStyle.css")
         stage.title = "Raven"
         stage.scene = scene
@@ -210,12 +212,12 @@ class Manager(val stage: Stage) {
         return root
     }
 
-    fun shutdown() {
+    private fun shutdown() {
         coreManager.api.webSocket.websocket.sendClose()
         Platform.exit()
     }
 
-    fun logout() {
+    private fun logout() {
         Thread {
             openChats.clear()
             coreManager.api.webSocket.websocket.sendClose()

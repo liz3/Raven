@@ -41,19 +41,18 @@ class EmbeddedContentItem(val embed: JSONObject, val mediaProxyServerPort: Int) 
                     val lW = embed.getJSONObject("thumbnail").getInt("width").toDouble()
                     thumbnail = Thumbnail(SwingFXUtils.toFXImage(ImageCache.getImage(url), null), width, lW)
                     if (embed.has("video") && !embed.isNull("video")) {
-                        var webView: WebView? = null
                         var switched = false
                         thumbnail!!.setOnMouseClicked { ev ->
-                            if (webView != null && ev.pickResult.intersectedNode == webView) return@setOnMouseClicked
+                            if (renderer != null && ev.pickResult.intersectedNode == renderer) return@setOnMouseClicked
                             if (ev.button == MouseButton.PRIMARY) {
                                 if (switched) {
                                     children[previewIndex] = thumbnail
-                                    webView!!.engine.load(null)
+                                    renderer?.engine?.load(null)
                                     switched = false
                                     return@setOnMouseClicked
                                 } else {
-                                    if (webView != null) {
-                                        webView!!.engine.reload()
+                                    if (renderer != null) {
+                                        renderer!!.engine.reload()
                                     } else {
 
                                         val youtubeVideoID =
@@ -63,9 +62,8 @@ class EmbeddedContentItem(val embed: JSONObject, val mediaProxyServerPort: Int) 
                                         renderer!!.prefWidth = thumbnail!!.fitWidth
                                         renderer!!.prefHeight = 430.0
                                         renderer!!.engine.load("http://localhost:$mediaProxyServerPort/youtube/$youtubeVideoID")
-                                        webView = renderer
                                     }
-                                    children[previewIndex] = webView
+                                    children[previewIndex] = renderer!!
                                     switched = true
                                 }
                             }

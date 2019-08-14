@@ -7,8 +7,9 @@ import com.savagellc.raven.include.GuiMessage
 class TextMessageContentItem(message: GuiMessage) : MessageContentItem() {
 
     init {
-        val contentLabel = getLabel(processMentions(message.rootObj.getJSONArray("mentions"), message.content), "-fx-font-size: 15;")
-            children.add(contentLabel)
+        val contentLabel =
+            getLabel(processMentions(message.rootObj.getJSONArray("mentions"), message.content), "-fx-font-size: 15;")
+        children.add(contentLabel)
     }
 
 }

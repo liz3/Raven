@@ -40,7 +40,7 @@ fun sendNotification(title:String, message:String, imagePath:String) {
               process.outputStream.flush()
           }
           OperatingSystemType.LINUX -> {
-              Runtime.getRuntime().exec(["notify-send", "-a", "Raven", title, message])
+              Runtime.getRuntime().exec(arrayOf("notify-send", "-a", "Raven", title, message))
           }
           OperatingSystemType.WINDOWS -> {
               //Will come later

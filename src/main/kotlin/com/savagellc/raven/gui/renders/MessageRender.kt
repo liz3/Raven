@@ -2,22 +2,20 @@ package com.savagellc.raven.gui.renders
 
 import com.savagellc.raven.core.CoreManager
 import com.savagellc.raven.discord.ImageCache
-import com.savagellc.raven.gui.MessageMenu
-import com.savagellc.raven.gui.browse
 import com.savagellc.raven.gui.cursorOnHover
+import com.savagellc.raven.gui.listitem.Message
+import com.savagellc.raven.gui.listitem.content.AttachmentContentItem
+import com.savagellc.raven.gui.listitem.content.EmbeddedContentItem
+import com.savagellc.raven.gui.listitem.content.StatusMessageContentItem
+import com.savagellc.raven.gui.listitem.content.TextMessageContentItem
 import com.savagellc.raven.include.GuiMessage
 import javafx.application.Platform
 import javafx.concurrent.Task
-import javafx.concurrent.Worker
 import javafx.embed.swing.SwingFXUtils
-import javafx.geometry.Insets
 import javafx.scene.control.Label
 import javafx.scene.control.ListView
 import javafx.scene.image.ImageView
-import javafx.scene.input.MouseButton
-import javafx.scene.web.WebView;
 import javafx.scene.layout.HBox
-import javafx.scene.layout.Priority
 import javafx.scene.layout.VBox
 import org.json.JSONArray
 import org.json.JSONObject
@@ -95,6 +93,7 @@ fun render(
     coreManager: CoreManager,
     renderSeparator: Boolean
 ): Triple<HBox, Label, VBox> {
+    /*
     val rootBox = HBox()
     rootBox.style = "-fx-padding: 0 15 0 0;"
     if (renderSeparator) {
@@ -259,6 +258,31 @@ fun render(
         contentRow.children.add(childBox)
     }
     rootBox.children.add(contentRow)
+     */
 
-    return Triple(rootBox, contentLabel, contentRow)
+
+    val m = Message(message, messagesList)
+
+    if (message.content != "") {
+        m.addContentItem(TextMessageContentItem(message))
+    }
+
+    if (message.type == 3) {
+        m.addContentItem(StatusMessageContentItem())
+    }
+
+    message.attachments.forEach {
+        m.addContentItem(AttachmentContentItem(it as JSONObject))
+    }
+
+    message.embeds.forEach {
+        m.addContentItem(EmbeddedContentItem(it as JSONObject, coreManager.mediaProxyServer.port))
+    }
+
+    messagesList.widthProperty().addListener { _, _, newValue ->
+        m.onWidthChanged(newValue.toDouble())
+    }
+
+
+    return Triple(m, Label(""), VBox()) // TODO
 }

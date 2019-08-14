@@ -125,6 +125,7 @@ class GuiMessage(
                     }
                 }
                 hBox.third.children.add(editorField)
+                editorField.requestFocus()
             }
         } else {
             hBox.third.children.remove(editorField)

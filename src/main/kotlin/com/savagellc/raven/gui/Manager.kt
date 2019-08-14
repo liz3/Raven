@@ -8,6 +8,7 @@ import com.savagellc.raven.discord.ImageCache
 import com.savagellc.raven.discord.OnlineStatus
 import com.savagellc.raven.gui.controller.ChannelViewController
 import com.savagellc.raven.gui.controller.MainViewController
+import com.savagellc.raven.gui.dialogs.LoginDialog
 import com.savagellc.raven.include.*
 import com.savagellc.raven.utils.readFile
 import com.savagellc.raven.utils.writeFile
@@ -52,7 +53,7 @@ class OpenTab(
             if (it.code == KeyCode.ENTER) {
                 coreManager.sendMessage(controller.sendMessageTextField.text, this) {
                     Platform.runLater {
-                        controller.sendMessageTextField.text = "";
+                        controller.sendMessageTextField.text = ""
                     }
                 }
             }
@@ -180,7 +181,7 @@ class Manager(val stage: Stage) {
             AnchorPane.setLeftAnchor(pane, 0.0)
             AnchorPane.setRightAnchor(pane, 0.0)
             AnchorPane.setBottomAnchor(pane, 0.0)
-            tab.content = rPane;
+            tab.content = rPane
             this.controller.openChatsTabView.tabs.add(tab)
             this.controller.openChatsTabView.selectionModel.select(tab)
         }
@@ -368,11 +369,10 @@ class Manager(val stage: Stage) {
             Data.token = readFile(file).second
             launchGui()
         } else {
-            val userName = Prompts.textPrompt("Email", "Enter Email Address")
-            val password = Prompts.passPrompt()
-            if (userName == "" || password == "") exitProcess(0)
+            val credentials = LoginDialog().showAndWait().get()
+            if (credentials.first.isEmpty() || credentials.second.isEmpty()) exitProcess(0)
             val localApi = Api("", true)
-            val lgResp = localApi.login(userName, password)
+            val lgResp = localApi.login(credentials.first, credentials.second)
             if (!lgResp.hasData) {
                 start()
                 return

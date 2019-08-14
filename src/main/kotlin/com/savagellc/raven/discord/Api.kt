@@ -51,7 +51,9 @@ data class Response(
     val headers: Headers,
     val data: String
 )
-
+fun computeAvatarImagePath(obj:JSONObject): String {
+return "https://cdn.discordapp.com/avatars/${obj.getString("id")}/${if(obj.has("avatar")) obj.getString("avatar") else ""}"
+}
 object ImageCache {
     private val saved = HashMap<String, BufferedImage>()
     fun getImage(url: String): BufferedImage? {

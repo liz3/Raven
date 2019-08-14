@@ -238,6 +238,9 @@ class Manager(val stage: Stage) {
         stage.setOnCloseRequest {
             quit()
         }
+        stage.focusedProperty().addListener { observable, oldValue, newValue ->
+            Data.focused = newValue
+        }
         setupMainMenu()
         controller.statusComboBox.items.addAll(OnlineStatus.values())
         controller.statusComboBox.selectionModel.select(OnlineStatus.ONLINE)

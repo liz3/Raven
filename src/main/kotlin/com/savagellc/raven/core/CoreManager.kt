@@ -3,12 +3,17 @@ package com.savagellc.raven.core
 import com.savagellc.raven.Data
 import com.savagellc.raven.discord.Api
 import com.savagellc.raven.discord.ChannelType
+import com.savagellc.raven.discord.computeAvatarImagePath
 import com.savagellc.raven.gui.Manager
 import com.savagellc.raven.gui.OpenTab
 import com.savagellc.raven.gui.Prompts
+import com.savagellc.raven.gui.renders.processMentions
+import com.savagellc.raven.gui.sendNotification
 import com.savagellc.raven.include.*
+import com.savagellc.raven.utils.MediaProxyServer
 import javafx.application.Platform
 import javafx.scene.control.Alert
+import okhttp3.internal.notify
 import org.json.JSONArray
 import org.json.JSONObject
 import java.util.*
@@ -16,6 +21,7 @@ import kotlin.collections.HashMap
 
 class CoreManager(val guiManager: Manager) {
     val api = Api(Data.token)
+    val mediaProxyServer = MediaProxyServer()
     lateinit var me: Me
     val chats = Vector<PrivateChat>()
     val servers = Vector<Server>()
@@ -25,9 +31,22 @@ class CoreManager(val guiManager: Manager) {
     init {
         api.webSocket.addEventListener("MESSAGE_CREATE") { json ->
             val id = json.getString("channel_id")
+            if (json.getJSONArray("mentions").find { (it as JSONObject).getString("id") == me.id } != null || json.getBoolean(
+                    "mention_everyone"
+                ) ||
+                (chats.find { it.id == id } != null && (guiManager.controller.openChatsTabView.selectionModel.selectedItem == null
+                        || guiManager.openChats.values.find { it.guiTab == guiManager.controller.openChatsTabView.selectionModel.selectedItem }?.channel!!.id != id))) {
+                sendNotification(
+                    json.getJSONObject("author").getString("username"),
+                    processMentions(json.getJSONArray("mentions"), json.getString("content").replace("\n", "")),
+                    computeAvatarImagePath(json.getJSONObject("author"))
+                )
+
+            }
             if (guiManager.openChats.containsKey(id)) {
                 val activeChat = guiManager.openChats[id]!!
                 val message = GuiMessage(json, this, activeChat)
+
                 activeChat.channel.messages.add(message)
                 activeChat.appendMessage(message)
                 if (activeChat.channel is PrivateChat) {

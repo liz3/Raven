@@ -6,7 +6,7 @@ import java.util.*
 
 class PrivateChat(val obj: JSONObject) : Channel(obj) {
     val isDm = obj.getInt("type") == 1
-    private val userObject = {
+    val userObject = {
         val arr = obj.getJSONArray("recipients")
         if (arr.length() == 0)
             JSONObject().put("username", "")

@@ -26,6 +26,7 @@ open class Channel(val rootObject: JSONObject) {
             )
         }
         if (lastAck == "") {
+            if(messages.size == 0) return
             lastAck = messages.lastElement().id
             Thread {
                 coreManager.api.sendMessageAckByChannelSwitch(id, messages.lastElement().id)

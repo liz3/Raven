@@ -22,6 +22,7 @@ import kotlin.collections.HashMap
 class CoreManager(val guiManager: Manager) {
     val api = Api(Data.token)
     val mediaProxyServer = MediaProxyServer()
+    val presenceManager = PresenceManager(this)
     lateinit var me: Me
     val chats = Vector<PrivateChat>()
     val servers = Vector<Server>()
@@ -29,6 +30,16 @@ class CoreManager(val guiManager: Manager) {
     lateinit var activeServer: Server
 
     init {
+        api.webSocket.addEventListener("READY") {json ->
+            me = Me(json.getJSONObject("user"))
+            presenceManager.populateOnlineStatus(json.getJSONArray("presences"))
+            json.getJSONArray("private_channels").forEach {
+                chats.add(PrivateChat(it as JSONObject))
+            }
+            json.getJSONArray("guilds").forEach {
+                servers.add(Server(it as JSONObject))
+            }
+        }
         api.webSocket.addEventListener("MESSAGE_CREATE") { json ->
             val id = json.getString("channel_id")
             if (json.getJSONArray("mentions").find { (it as JSONObject).getString("id") == me.id } != null || json.getBoolean(
@@ -216,17 +227,6 @@ class CoreManager(val guiManager: Manager) {
             server.loadedChannels = true
             cb()
         }.start()
-    }
-
-    fun initLoad() {
-        me = Me(api.getSelf())
-        api.getDmChannels().forEach {
-            chats.add(PrivateChat(it as JSONObject))
-        }
-        api.getGuilds().forEach {
-            it as JSONObject
-            servers.add(Server(it))
-        }
     }
 
     fun editMessage(message: GuiMessage, updatedContent: String, channelId: String, callback: () -> Unit) {

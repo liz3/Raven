@@ -33,7 +33,7 @@ enum class ChannelType(val num: Int) {
 }
 
 //277767292404891648
-enum class OnlineStatus(val value: String, private val fName: String) {
+enum class OnlineStatus(val value: String, val fName: String) {
     IDLE("idle", "Idle"),
     DO_NOT_DISTURB("dnd", "Do not disturb"),
     OFFLINE("invisible", "Invisible"),

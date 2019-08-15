@@ -132,6 +132,8 @@ class Manager(val stage: Stage) {
     val treeView = TreeView<Any>()
     var moving = false
     val openChats = HashMap<String, OpenTab>()
+    lateinit var infoManager: InfoViewManager
+    lateinit var selectedChat: OpenTab
 
     private fun launchGui() {
         coreManager = CoreManager(this)
@@ -148,6 +150,7 @@ class Manager(val stage: Stage) {
         stage.centerOnScreen()
         setupGuiEvents()
         stage.show()
+        infoManager = InfoViewManager(this)
         initialLoad()
     }
 
@@ -266,16 +269,17 @@ class Manager(val stage: Stage) {
             }
         }
         controller.openChatsTabView.selectionModel.selectedItemProperty().addListener { _, old, newValue ->
-            if (newValue != null && old != null) {
-                val find = openChats.values.find { it.guiTab == newValue }
-                if (find != null && find.channel.messages.size > 0) {
-                    val lastId = find.channel.messages.lastElement().id
-                    if (find.channel.lastAck != find.channel.messages.lastElement().id)
-                        Thread {
-                            coreManager.api.sendMessageAckByChannelSwitch(find.channel.id, lastId)
-                        }.start()
-                }
+            val find = openChats.values.find { it.guiTab == newValue } ?: return@addListener
+            selectedChat = find
+            infoManager.loadChannel(find)
+            if (find.channel.messages.size > 0) {
+                val lastId = find.channel.messages.lastElement().id
+                if (find.channel.lastAck != find.channel.messages.lastElement().id)
+                    Thread {
+                        coreManager.api.sendMessageAckByChannelSwitch(find.channel.id, lastId)
+                    }.start()
             }
+
         }
         controller.serversList.setOnMouseClicked {
             if (it.clickCount == 2) {
@@ -319,7 +323,6 @@ class Manager(val stage: Stage) {
 
     private fun initialLoad() {
         Thread {
-            coreManager.initLoad()
             Platform.runLater {
                 coreManager.chats.forEach {
                     controller.dmChannelsList.items.add(it.guiObj)
@@ -334,6 +337,8 @@ class Manager(val stage: Stage) {
         val file = Menu("File")
         file.items.addAll(createMenuOption("Logout") {
             logout()
+        }, createMenuOption("Toogle side pane") {
+            infoManager.toggle()
         }, createMenuOption("Attach Debugger") {
             val d = EventLogger()
             coreManager.api.attachDebugger(d)

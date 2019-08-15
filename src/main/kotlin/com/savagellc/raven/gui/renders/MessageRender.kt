@@ -103,11 +103,11 @@ fun render(
     }
 
     message.attachments.forEach {
-        m.addContentItem(AttachmentContentItem(it as JSONObject))
+        m.addContentItem(AttachmentContentItem(it as JSONObject, messagesList))
     }
 
     message.embeds.forEach {
-        m.addContentItem(EmbeddedContentItem(it as JSONObject, coreManager.mediaProxyServer.port))
+        m.addContentItem(EmbeddedContentItem(it as JSONObject, coreManager.mediaProxyServer.port, messagesList))
     }
 
     messagesList.widthProperty().addListener { _, _, newValue ->

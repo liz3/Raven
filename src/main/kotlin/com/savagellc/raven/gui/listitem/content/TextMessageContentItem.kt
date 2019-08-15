@@ -4,12 +4,11 @@ import com.savagellc.raven.gui.renders.getLabel
 import com.savagellc.raven.gui.renders.processMentions
 import com.savagellc.raven.include.GuiMessage
 
-class TextMessageContentItem(message: GuiMessage) : MessageContentItem() {
+class TextMessageContentItem(message: GuiMessage) : TextItem() {
 
     init {
-        val contentLabel =
-            getLabel(processMentions(message.rootObj.getJSONArray("mentions"), message.content), "-fx-font-size: 15;")
-        children.add(contentLabel)
+        text = processMentions(message.rootObj.getJSONArray("mentions"), message.content)
+        style = "-fx-font-size: 15;"
     }
 
 }

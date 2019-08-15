@@ -9,11 +9,17 @@ import com.savagellc.raven.gui.renders.maxImageWidth
 import javafx.application.Platform
 import javafx.concurrent.Task
 import javafx.embed.swing.SwingFXUtils
+import javafx.scene.control.ListView
 import javafx.scene.input.MouseButton
+import javafx.scene.layout.HBox
 import javafx.scene.web.WebView
 import org.json.JSONObject
 
-class EmbeddedContentItem(val embed: JSONObject, val mediaProxyServerPort: Int) : MessageContentItem() {
+class EmbeddedContentItem(
+    val embed: JSONObject,
+    val mediaProxyServerPort: Int,
+    messagesList: ListView<HBox>
+) : MessageContentItem() {
 
     private var thumbnail: Thumbnail? = null
     private var renderer: WebView? = null
@@ -39,7 +45,7 @@ class EmbeddedContentItem(val embed: JSONObject, val mediaProxyServerPort: Int) 
                 override fun call(): Void? {
                     val url = embed.getJSONObject("thumbnail").getString("url")
                     val lW = embed.getJSONObject("thumbnail").getInt("width").toDouble()
-                    thumbnail = Thumbnail(SwingFXUtils.toFXImage(ImageCache.getImage(url), null), width, lW)
+                    thumbnail = Thumbnail(SwingFXUtils.toFXImage(ImageCache.getImage(url), null), messagesList.width, lW)
                     if (embed.has("video") && !embed.isNull("video")) {
                         var switched = false
                         thumbnail!!.setOnMouseClicked { ev ->

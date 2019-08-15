@@ -98,7 +98,7 @@ class GuiMessage(
         } else {
             cachedUpdates.forEach {
                 revisions++
-                it.getContentItems()[0] = MetaContentItem(true, revisions)
+                it.content.children.add(0, MetaContentItem(true, revisions))
                 message.addAllContentItems(it.getContentItems())
             }
 

@@ -6,9 +6,14 @@ import com.savagellc.raven.gui.renders.getLabel
 import javafx.application.Platform
 import javafx.concurrent.Task
 import javafx.embed.swing.SwingFXUtils
+import javafx.scene.control.ListView
+import javafx.scene.layout.HBox
 import org.json.JSONObject
 
-class AttachmentContentItem(val attachment: JSONObject) : MessageContentItem() {
+class AttachmentContentItem(
+    val attachment: JSONObject,
+    messagesList: ListView<HBox>
+) : MessageContentItem() {
 
     private var thumbnail: Thumbnail? = null
 
@@ -23,7 +28,7 @@ class AttachmentContentItem(val attachment: JSONObject) : MessageContentItem() {
                 override fun call(): Void? {
                     val url = attachment.getString("url")
                     val lW = attachment.getInt("width").toDouble()
-                    thumbnail = Thumbnail(SwingFXUtils.toFXImage(ImageCache.getImage(url), null), width, lW)
+                    thumbnail = Thumbnail(SwingFXUtils.toFXImage(ImageCache.getImage(url), null), messagesList.width, lW)
                     Platform.runLater {
                         children.add(thumbnail)
                         requestRefresh()

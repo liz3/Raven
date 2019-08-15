@@ -5,36 +5,41 @@ import com.savagellc.raven.gui.renders.maxImageWidth
 import javafx.scene.control.Label
 import javafx.scene.layout.VBox
 
-open class MessageContentItem : VBox() {
+interface MessageContentItem {
+    fun requestRefresh()
+
+    fun updateWidth(newWidth: Double)
+}
+
+open class ComplexContentItem : MessageContentItem, VBox() {
 
     lateinit var parentMessage: Message
 
 
-    fun requestRefresh() {
+    final override fun requestRefresh() {
         parentMessage.requestRefresh()
     }
 
-    open fun onWidthChanged(newWidth: Double) {
+    override fun updateWidth(newWidth: Double) {
         // nothing until overridden
     }
 
 }
 
-open class TextItem : Label() {
+open class TextContentItem : MessageContentItem, Label() {
 
     lateinit var parentMessage: Message
 
     init {
         maxWidth = maxImageWidth - 80
-        isWrapText = true;
-
+        isWrapText = true
     }
 
-    fun requestRefresh() {
+    final override fun requestRefresh() {
         parentMessage.requestRefresh()
     }
 
-    open fun onWidthChanged(newWidth: Double) {
+    override fun updateWidth(newWidth: Double) {
         // nothing until overridden
     }
 

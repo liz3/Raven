@@ -111,7 +111,7 @@ fun render(
     }
 
     messagesList.widthProperty().addListener { _, _, newValue ->
-        m.onWidthChanged(newValue.toDouble())
+        m.updateWidth(newValue.toDouble())
     }
 
 

@@ -19,7 +19,7 @@ class EmbeddedContentItem(
     val embed: JSONObject,
     val mediaProxyServerPort: Int,
     messagesList: ListView<HBox>
-) : MessageContentItem() {
+) : ComplexContentItem() {
 
     private var thumbnail: Thumbnail? = null
     private var renderer: WebView? = null
@@ -97,7 +97,7 @@ class EmbeddedContentItem(
         }
     }
 
-    override fun onWidthChanged(newWidth: Double) {
+    override fun updateWidth(newWidth: Double) {
         thumbnail?.updateChatWidth(newWidth)
         if (newWidth <= maxImageWidth - 100) {
             renderer?.prefWidth = newWidth - 100

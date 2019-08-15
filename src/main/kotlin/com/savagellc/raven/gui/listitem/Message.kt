@@ -2,9 +2,9 @@ package com.savagellc.raven.gui.listitem
 
 import com.savagellc.raven.discord.ImageCache
 import com.savagellc.raven.gui.MessageMenu
+import com.savagellc.raven.gui.listitem.content.ComplexContentItem
 import com.savagellc.raven.gui.listitem.content.MessageContentItem
-import com.savagellc.raven.gui.listitem.content.MetaContentItem
-import com.savagellc.raven.gui.listitem.content.TextItem
+import com.savagellc.raven.gui.listitem.content.TextContentItem
 import com.savagellc.raven.gui.renders.getLabel
 import com.savagellc.raven.gui.renders.maxImageWidth
 import com.savagellc.raven.include.GuiMessage
@@ -31,7 +31,6 @@ open class Message(message: GuiMessage, private val messagesList: ListView<HBox>
                 messagesList,
                 it.button == MouseButton.SECONDARY
             )
-
         }
         children.add(content)
         content.style = "-fx-padding: 0 0 0 5;"
@@ -72,34 +71,40 @@ open class Message(message: GuiMessage, private val messagesList: ListView<HBox>
     }
 
     fun addContentItem(contentItem: MessageContentItem) {
-        contentItem.parentMessage = this
-        content.children.add(contentItem)
-    }
-    fun addContentItem(contentItem: TextItem) {
-        contentItem.parentMessage = this
-        content.children.add(contentItem)
+        when (contentItem) {
+            is ComplexContentItem -> {
+                contentItem.parentMessage = this
+                content.children.add(contentItem)
+            }
+            is TextContentItem -> {
+                contentItem.parentMessage = this
+                content.children.add(contentItem)
+            }
+            else -> {
+
+            }
+        }
     }
 
     fun addAllContentItems(contentItems: List<Any>) {
         contentItems.forEach {
-            if(it is MessageContentItem)addContentItem(it)
-            if(it is TextItem)addContentItem(it)
+            if (it is MessageContentItem) addContentItem(it)
         }
     }
 
     fun clearContentItems() {
-        content.children.removeIf { it is MessageContentItem || it is TextItem }
+        content.children.removeIf { it is MessageContentItem }
     }
 
     fun getContentItems(): MutableList<MessageContentItem> {
-        return content.children.filter{ it is MessageContentItem || it is TextItem } as MutableList<MessageContentItem>
+        return content.children.filterIsInstance<MessageContentItem>() as MutableList<MessageContentItem>
     }
 
-    fun onWidthChanged(newWidth: Double) {
+    fun updateWidth(newWidth: Double) {
         if(width > maxImageWidth) return
         prefWidth = newWidth - 80
         content.children.filterIsInstance<MessageContentItem>().forEach {
-            it.onWidthChanged(newWidth)
+            it.updateWidth(newWidth)
         }
     }
 
@@ -108,5 +113,4 @@ open class Message(message: GuiMessage, private val messagesList: ListView<HBox>
             messagesList.refresh()
         }
     }
-
 }

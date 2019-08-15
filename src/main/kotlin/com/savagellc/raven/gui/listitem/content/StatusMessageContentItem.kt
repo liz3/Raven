@@ -1,8 +1,6 @@
 package com.savagellc.raven.gui.listitem.content
 
-import com.savagellc.raven.gui.renders.getLabel
-
-class StatusMessageContentItem() : TextItem() {
+class StatusMessageContentItem() : TextContentItem() {
 
     init {
         // TODO more status items

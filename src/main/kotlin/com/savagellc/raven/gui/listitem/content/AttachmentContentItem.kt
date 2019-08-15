@@ -13,7 +13,7 @@ import org.json.JSONObject
 class AttachmentContentItem(
     val attachment: JSONObject,
     messagesList: ListView<HBox>
-) : MessageContentItem() {
+) : ComplexContentItem() {
 
     private var thumbnail: Thumbnail? = null
 
@@ -42,7 +42,7 @@ class AttachmentContentItem(
         }
     }
 
-    override fun onWidthChanged(newWidth: Double) {
+    override fun updateWidth(newWidth: Double) {
         thumbnail?.updateChatWidth(newWidth)
     }
 

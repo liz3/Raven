@@ -38,7 +38,6 @@ open class Message(message: GuiMessage, private val messagesList: ListView<HBox>
         //TODO: Render seperator
 
         maxWidth = maxImageWidth
-
         if (message.author.get("avatar") is String) {
             val task = object : Task<Void>() {
                 override fun call(): Void? {
@@ -97,6 +96,8 @@ open class Message(message: GuiMessage, private val messagesList: ListView<HBox>
     }
 
     fun onWidthChanged(newWidth: Double) {
+        if(width > maxImageWidth) return
+        prefWidth = newWidth - 80
         content.children.filterIsInstance<MessageContentItem>().forEach {
             it.onWidthChanged(newWidth)
         }

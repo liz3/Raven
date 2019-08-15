@@ -17,7 +17,11 @@ import javafx.scene.input.MouseButton
 import javafx.scene.layout.HBox
 import javafx.scene.layout.VBox
 
-open class Message(message: GuiMessage, private val messagesList: ListView<HBox>) : HBox() {
+open class Message(
+    message: GuiMessage,
+    private val messagesList: ListView<HBox>,
+    renderSeparator: Boolean
+) : HBox() {
 
      val content = VBox()
 
@@ -34,7 +38,8 @@ open class Message(message: GuiMessage, private val messagesList: ListView<HBox>
         }
         children.add(content)
         content.style = "-fx-padding: 0 0 0 5;"
-        //TODO: Render seperator
+        if (renderSeparator)
+            style += "-fx-border-color: grey; -fx-border-width: 2 0 0 0;"
 
         maxWidth = maxImageWidth
         if (message.author.get("avatar") is String) {

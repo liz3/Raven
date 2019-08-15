@@ -9,6 +9,7 @@ import com.savagellc.raven.gui.renders.render
 import javafx.application.Platform
 import javafx.scene.control.ListView
 import javafx.scene.control.TextField
+import javafx.scene.input.KeyCode
 import javafx.scene.layout.*
 import javafx.scene.paint.Color
 import org.json.JSONArray
@@ -19,7 +20,7 @@ import java.util.*
 class GuiMessage(
     val rootObj: JSONObject,
     val coreManager: CoreManager,
-    val guiObject: OpenTab
+    private val guiObject: OpenTab
 ) {
     val channel = guiObject.channel
     val id = rootObj.getString("id")
@@ -38,7 +39,7 @@ class GuiMessage(
     var revisions = 1
     var hasUpdate = false
 
-    lateinit var cachedUpdates: Vector<Message>
+    private lateinit var cachedUpdates: Vector<Message>
 
 
     fun pushContentUpdate(updatedContent: String?, embeds: JSONArray?, attachments: JSONArray?) {
@@ -109,7 +110,6 @@ class GuiMessage(
     }
 
     fun editMode() {
-        /* TODO
         if (!isEditMode) {
             isEditMode = true
             Platform.runLater {
@@ -118,24 +118,24 @@ class GuiMessage(
                     if (it.code == KeyCode.ENTER) {
                         coreManager.editMessage(this, editorField.text, channel.id) {
                             Platform.runLater {
-                                message.third.children.remove(editorField)
+                                message.content.children.remove(editorField)
                                 isEditMode = false
                             }
                         }
                         return@setOnKeyPressed
                     }
                     if (it.code == KeyCode.ESCAPE) {
-                        message.third.children.remove(editorField)
+                        message.content.children.remove(editorField)
                         isEditMode = false
                     }
                 }
-                message.third.children.add(editorField)
+                message.content.children.add(editorField)
                 editorField.requestFocus()
             }
         } else {
-            message.third.children.remove(editorField)
+            message.content.children.remove(editorField)
             isEditMode = false
-        }*/
+        }
     }
 
     fun deleteMessage() {

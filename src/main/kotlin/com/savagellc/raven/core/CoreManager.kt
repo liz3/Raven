@@ -129,7 +129,7 @@ class CoreManager(val guiManager: Manager) {
                 if (json.has("guild_id") && !json.isNull("guild_id")) {
                     val guildId = json.getString("guild_id")
                     val server = servers.find { it.id == guildId }
-                    server?.channels?.add(ServerChannel(json))
+                    server?.channels?.add(ServerChannel(json, server))
                     if (this::activeServer.isInitialized)
                         if (activeServer == server)
                             Platform.runLater {
@@ -222,10 +222,15 @@ class CoreManager(val guiManager: Manager) {
         }
         Thread {
             api.getGuildChannels(server.id).forEach {
-                server.channels.add(ServerChannel(it as JSONObject))
+                server.channels.add(ServerChannel(it as JSONObject, server))
             }
-            server.loadedChannels = true
-            cb()
+            api.webSocket.addTempEventListener("GUILD_MEMBERS_CHUNK") {json ->
+                server.users.addAll(json.getJSONArray("members").map { GuildMember(it as JSONObject) })
+                server.loadedChannels = true
+                cb()
+            }
+            api.loadGuildUsers(server.id)
+
         }.start()
     }
 

@@ -162,7 +162,10 @@ class Api(private val token: String, holdConnect: Boolean = false) {
         val response = request("/users/@me/guilds")
         return JSONArray(response.data)
     }
+    fun loadGuildUsers(id:String) {
 
+        webSocket.sendMessage(OpCode.REQUEST_GUILD_MEMBERS, JSONObject().put("guild_id", id).put("query", "").put("limit", 0))
+    }
     fun getGuildChannels(id: String): JSONArray {
         val response = request("/guilds/$id/channels")
         return JSONArray(response.data)

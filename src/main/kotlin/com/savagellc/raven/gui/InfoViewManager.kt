@@ -97,7 +97,15 @@ class InfoViewManager(val guiManager: Manager) {
     }
 
     private fun loadServerChannel(channel: ServerChannel) {
-
+        Platform.runLater {
+            serverController.serverUsersList.items.clear()
+            rootPane.children.clear()
+            serverController.profile.image = null
+            serverController.userNameLabel.text = channel.server.name
+            println(channel.server.users)
+            rootPane.children.add(serverPane)
+            serverController.serverUsersList.items.addAll(channel.server.users)
+        }
     }
 
     fun toggle() {

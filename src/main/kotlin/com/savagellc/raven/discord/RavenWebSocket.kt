@@ -32,6 +32,7 @@ class RavenWebSocket(val token: String, val api: Api) {
     lateinit var websocket: WebSocket
     val zlibContext = Inflater()
     private val eventListeners = Vector<Pair<String, (JSONObject) -> Unit>>()
+    private val tempListener = Vector<Pair<String, (JSONObject) -> Unit>>()
     private var heart_beat_interval = 0L
     var disposed = false
     var requests = 0
@@ -49,6 +50,9 @@ class RavenWebSocket(val token: String, val api: Api) {
 
     fun addEventListener(name: String, cb: (JSONObject) -> Unit) {
         eventListeners.add(Pair(name, cb))
+    }
+    fun addTempEventListener(name: String, cb: (JSONObject) -> Unit) {
+        tempListener.add(Pair(name, cb))
     }
 
     fun clearEventListeners() {
@@ -153,6 +157,14 @@ class RavenWebSocket(val token: String, val api: Api) {
                 val type = raw.getString("t")
                 eventListeners.forEach {
                     if (it.first == type) it.second(message)
+                }
+                val toRemove =  Vector<Pair<String, (JSONObject) -> Unit>>()
+                tempListener.filter { it.first == type }.forEach {
+                    it.second(message)
+                    toRemove.add(it)
+                }
+                toRemove.forEach {
+                    tempListener.remove(it)
                 }
             }
             OpCode.HELLO.num -> {

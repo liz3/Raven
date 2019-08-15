@@ -41,11 +41,18 @@ fun sendNotification(title:String, message:String, imagePath:String) {
               val builder = ProcessBuilder(file.absolutePath)
               val process = builder.start()
               process.outputStream.write("Raven: $title\n$message\n$imagePath\n".toByteArray())
-
               process.outputStream.flush()
           }
           OperatingSystemType.LINUX -> {
-              Runtime.getRuntime().exec(arrayOf("notify-send", "-a", "Raven", title, message))
+              val file = File(File(System.getProperty("user.home"), ".raven"), "RavenNativeUtils")
+              if(!file.exists()) {
+                  writeFile(Data.javaClass.getResourceAsStream("/native/linux/RavenNativeUtils").readAllBytes(), file, false, true)
+                  Runtime.getRuntime().exec("chmod +x ${file.absolutePath}")
+              }
+              val builder = ProcessBuilder(file.absolutePath)
+              val process = builder.start()
+              process.outputStream.write("Raven: $title\n$message\n$imagePath\n".toByteArray())
+              process.outputStream.flush()
           }
           OperatingSystemType.WINDOWS -> {
               //Will come later

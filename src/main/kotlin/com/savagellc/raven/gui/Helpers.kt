@@ -1,11 +1,16 @@
 package com.savagellc.raven.gui
 
 import com.savagellc.raven.Data
+import com.savagellc.raven.discord.ImageCache
 import com.savagellc.raven.utils.OperatingSystemType
 import com.savagellc.raven.utils.getOS
 import com.savagellc.raven.utils.writeFile
+import javafx.application.Platform
+import javafx.concurrent.Task
+import javafx.embed.swing.SwingFXUtils
 import javafx.scene.Cursor
 import javafx.scene.Node
+import javafx.scene.image.ImageView
 import java.awt.Desktop
 import java.io.File
 import java.net.URI
@@ -47,4 +52,49 @@ fun sendNotification(title:String, message:String, imagePath:String) {
           }
       }
   }.start()
+}
+fun appendToImageViewAsync(view:ImageView, path:String, cb: () -> Unit) {
+    val task = object : Task<Void>() {
+        override fun call(): Void? {
+            val image =
+                SwingFXUtils.toFXImage(
+                    ImageCache.getImage(
+                        path
+                    ),
+                    null
+                )
+            Platform.runLater {
+               view.image = image
+            }
+            return null
+        }
+    }
+    task.setOnSucceeded {
+        cb()
+    }
+    val loader = Thread(task)
+    loader.isDaemon = true
+    loader.start()
+}
+fun appendToImageViewAsync(view:ImageView, path:String) {
+    val task = object : Task<Void>() {
+        override fun call(): Void? {
+            val image =
+                SwingFXUtils.toFXImage(
+                    ImageCache.getImage(
+                        path
+                    ),
+                    null
+                )
+
+            Platform.runLater {
+               view.image = image
+            }
+            return null
+        }
+    }
+
+    val loader = Thread(task)
+    loader.isDaemon = true
+    loader.start()
 }

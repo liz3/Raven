@@ -3,10 +3,10 @@ package com.savagellc.raven.include
 import com.savagellc.raven.Data
 import com.savagellc.raven.core.CoreManager
 import com.savagellc.raven.gui.OpenTab
-import com.savagellc.raven.gui.renders.getLabel
+import com.savagellc.raven.gui.listitem.Message
+import com.savagellc.raven.gui.listitem.content.MetaContentItem
 import com.savagellc.raven.gui.renders.render
 import javafx.application.Platform
-import javafx.scene.control.Label
 import javafx.scene.control.ListView
 import javafx.scene.control.TextField
 import javafx.scene.input.KeyCode
@@ -20,7 +20,7 @@ import java.util.*
 class GuiMessage(
     val rootObj: JSONObject,
     val coreManager: CoreManager,
-    val guiObject: OpenTab
+    private val guiObject: OpenTab
 ) {
     val channel = guiObject.channel
     val id = rootObj.getString("id")
@@ -31,29 +31,34 @@ class GuiMessage(
     var content = rootObj.getString("content")
     var attachments = rootObj.getJSONArray("attachments")
     var embeds = rootObj.getJSONArray("embeds")
-    private lateinit var hBox: Triple<HBox, Label, VBox>
+
+    private lateinit var message: Message
     private lateinit var editorField: TextField
     var renderSeparator = false
     var isEditMode = false
     var revisions = 1
     var hasUpdate = false
-    lateinit var cachedUpdates: Vector<Triple<HBox, Label, VBox>>
+
+    private lateinit var cachedUpdates: Vector<Message>
+
+
     fun pushContentUpdate(updatedContent: String?, embeds: JSONArray?, attachments: JSONArray?) {
         if (updatedContent != null) content = updatedContent
         if (embeds != null) this.embeds = embeds
         if (attachments != null) this.attachments = attachments
+
         if (!Data.options.preventMessageUpdate) {
             Platform.runLater {
                 val result = render(this, guiObject.controller.messagesList, coreManager, renderSeparator)
-                hBox.third.children.clear()
-                hBox.third.children.addAll(result.third.children)
+                message.clearContentItems()
+                message.addAllContentItems(result.getContentItems())
             }
         } else {
             Platform.runLater {
                 if (!this::cachedUpdates.isInitialized) cachedUpdates = Vector()
                 cachedUpdates.add(render(this, guiObject.controller.messagesList, coreManager, renderSeparator))
                 hasUpdate = true
-                hBox.first.border = Border(
+                message.border = Border(
                     BorderStroke(
                         Color.BLUE,
                         BorderStrokeStyle.SOLID, CornerRadii.EMPTY, BorderWidths.DEFAULT
@@ -66,7 +71,7 @@ class GuiMessage(
 
     fun pushRemove() {
         if (Data.options.preventMessageDelete) {
-            hBox.first.border = Border(
+            message.border = Border(
                 BorderStroke(
                     Color.RED,
                     BorderStrokeStyle.SOLID, CornerRadii.EMPTY, BorderWidths.DEFAULT
@@ -78,7 +83,7 @@ class GuiMessage(
         channel.messages.remove(this)
 
         Platform.runLater {
-            guiObject.controller.messagesList.items.remove(hBox.first)
+            guiObject.controller.messagesList.items.remove(message)
             guiObject.controller.messagesList.refresh()
         }
 
@@ -88,19 +93,19 @@ class GuiMessage(
         if (!hasUpdate) return
         hasUpdate = false
         if (!append) {
-            hBox.third.children.clear()
+            message.clearContentItems()
             revisions++
-            hBox.third.children.addAll(cachedUpdates.last().third.children)
+            message.addAllContentItems(cachedUpdates.last().getContentItems())
         } else {
             cachedUpdates.forEach {
                 revisions++
-                it.third.children[0] = getLabel("Revision $revisions", isUnderLined = true)
-                hBox.third.children.addAll(it.third.children)
+                it.content.children.add(0, MetaContentItem(true, revisions))
+                message.addAllContentItems(it.getContentItems())
             }
 
         }
         cachedUpdates.clear()
-        hBox.first.border = null
+        message.border = null
 
     }
 
@@ -113,22 +118,22 @@ class GuiMessage(
                     if (it.code == KeyCode.ENTER) {
                         coreManager.editMessage(this, editorField.text, channel.id) {
                             Platform.runLater {
-                                hBox.third.children.remove(editorField)
+                                message.content.children.remove(editorField)
                                 isEditMode = false
                             }
                         }
                         return@setOnKeyPressed
                     }
                     if (it.code == KeyCode.ESCAPE) {
-                        hBox.third.children.remove(editorField)
+                        message.content.children.remove(editorField)
                         isEditMode = false
                     }
                 }
-                hBox.third.children.add(editorField)
+                message.content.children.add(editorField)
                 editorField.requestFocus()
             }
         } else {
-            hBox.third.children.remove(editorField)
+            message.content.children.remove(editorField)
             isEditMode = false
         }
     }
@@ -141,9 +146,9 @@ class GuiMessage(
         return "$senderName> $content"
     }
 
-    fun getRendered(messagesList: ListView<HBox>): HBox {
-        hBox = render(this, messagesList, coreManager, renderSeparator)
+    fun getRendered(messagesList: ListView<HBox>): Message {
+        message = render(this, messagesList, coreManager, renderSeparator)
         coreManager.messageIndex[this.id] = this
-        return hBox.first
+        return message
     }
 }

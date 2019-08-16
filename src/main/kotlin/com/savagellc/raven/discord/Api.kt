@@ -36,7 +36,8 @@ enum class ChannelType(val num: Int) {
 enum class OnlineStatus(val value: String, val fName: String) {
     IDLE("idle", "Idle"),
     DO_NOT_DISTURB("dnd", "Do not disturb"),
-    OFFLINE("invisible", "Invisible"),
+    INVISIBLE("invisible", "Invisible"),
+    OFFLINE("offline", "Offline"),
     ONLINE("online", "Online");
 
     override fun toString(): String {

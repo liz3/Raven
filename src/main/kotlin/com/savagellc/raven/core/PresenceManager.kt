@@ -41,8 +41,10 @@ class PresenceManager(val coreManager: CoreManager) {
         arr.forEach { json ->
             json as JSONObject
             val id = json.getJSONObject("user").getString("id")
-            val status = json.getString("status")
-            onlineStatus[id] = OnlineStatus.values().find { it.value == status }!!
+          if(json.has("status") && !json.isNull("status")) {
+              val status = json.getString("status")
+              onlineStatus[id] = OnlineStatus.values().find { it.value == status }!!
+          }
         }
     }
 }

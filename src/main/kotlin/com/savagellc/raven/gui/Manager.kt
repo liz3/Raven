@@ -136,7 +136,11 @@ class Manager(val stage: Stage) {
     lateinit var selectedChat: OpenTab
 
     private fun launchGui() {
-        coreManager = CoreManager(this)
+        val cb = {
+            initialLoad()
+
+        }
+        coreManager = CoreManager(this, cb)
         val loader = FXMLLoader()
         val parent = loader.load<BorderPane>(javaClass.getResourceAsStream("/fxml/MainView.fxml"))
         controller = loader.getController() as MainViewController
@@ -151,7 +155,6 @@ class Manager(val stage: Stage) {
         setupGuiEvents()
         stage.show()
         infoManager = InfoViewManager(this)
-        initialLoad()
     }
 
     fun addDmChat(chat: PrivateChat) {

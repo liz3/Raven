@@ -19,7 +19,7 @@ import org.json.JSONObject
 import java.util.*
 import kotlin.collections.HashMap
 
-class CoreManager(val guiManager: Manager) {
+class CoreManager(val guiManager: Manager, val ready: () -> Unit) {
     val api = Api(Data.token)
     val mediaProxyServer = MediaProxyServer()
     val presenceManager = PresenceManager(this)
@@ -32,12 +32,17 @@ class CoreManager(val guiManager: Manager) {
     init {
         api.webSocket.addEventListener("READY") {json ->
             me = Me(json.getJSONObject("user"))
-            presenceManager.populateOnlineStatus(json.getJSONArray("presences"))
-            json.getJSONArray("private_channels").forEach {
-                chats.add(PrivateChat(it as JSONObject))
-            }
-            json.getJSONArray("guilds").forEach {
-                servers.add(Server(it as JSONObject))
+            try {
+                presenceManager.populateOnlineStatus(json.getJSONArray("presences"))
+                json.getJSONArray("private_channels").forEach {
+                    chats.add(PrivateChat(it as JSONObject))
+                }
+                json.getJSONArray("guilds").forEach {
+                    servers.add(Server(it as JSONObject))
+                }
+                ready()
+            } catch(e:Exception) {
+                e.printStackTrace()
             }
         }
         api.webSocket.addEventListener("MESSAGE_CREATE") { json ->

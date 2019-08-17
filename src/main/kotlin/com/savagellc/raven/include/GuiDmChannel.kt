@@ -1,5 +1,6 @@
 package com.savagellc.raven.include
 
+import com.savagellc.raven.discord.ChannelType
 import org.json.JSONObject
 
 class GuiDmChannel(val id: String, val name: String, val privateChat: PrivateChat) {
@@ -16,6 +17,6 @@ class GuiDmChannel(val id: String, val name: String, val privateChat: PrivateCha
 
 class GuiServerChannel(val id: String, val name: String, val privateChat: ServerChannel) {
     override fun toString(): String {
-        return "#$name"
+        return "${if(privateChat.type == ChannelType.GUILD_VOICE.num) "VOICE " else "TEXT "} #$name"
     }
 }

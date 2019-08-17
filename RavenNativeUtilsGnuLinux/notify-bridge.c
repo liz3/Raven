@@ -22,7 +22,7 @@ int main(int argv, char** argc) {
     }
     char* image_path = read_line_from_std();
      notify_init("Raven");
-     NotifyNotification* n = notify_notification_new (title, 
+     NotifyNotification* n = notify_notification_new (title,
                                  content,
                                   0);
     if(strcmp(image_path, "") != 0) {

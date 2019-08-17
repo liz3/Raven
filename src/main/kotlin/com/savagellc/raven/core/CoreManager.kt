@@ -1,6 +1,7 @@
 package com.savagellc.raven.core
 
 import com.savagellc.raven.Data
+import com.savagellc.raven.core.audio.AudioManager
 import com.savagellc.raven.discord.Api
 import com.savagellc.raven.discord.ChannelType
 import com.savagellc.raven.discord.computeAvatarImagePath
@@ -27,6 +28,7 @@ class CoreManager(val guiManager: Manager, val ready: () -> Unit) {
     val chats = Vector<PrivateChat>()
     val servers = Vector<Server>()
     val messageIndex = HashMap<String, GuiMessage>()
+    val audioManager = AudioManager(this)
     lateinit var activeServer: Server
 
     init {

@@ -12,6 +12,8 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.MediaType.Companion.toMediaType
+import java.util.*
+import kotlin.collections.HashMap
 
 const val USER_AGENT =
     "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) discord/0.0.9 Chrome/69.0.3497.128 Electron/4.0.8 Safari/537.36" // UA of Discord 0.0.9 on Linux
@@ -171,7 +173,32 @@ class Api(private val token: String, holdConnect: Boolean = false) {
         val response = request("/guilds/$id/channels")
         return JSONArray(response.data)
     }
-
+    fun connectToVoice(channelId:String, serverId:String, resp: (JSONObject, JSONObject) -> Unit) {
+        val obj = JSONObject().put("guild_id", serverId).put("channel_id", channelId).put("self_mute", false).put("self_deaf", false)
+        val holders = Vector<JSONObject>()
+        var send = false
+        webSocket.addTempEventListener("VOICE_SERVER_UPDATE") {
+            if(holders.size == 1) {
+                if(!send) {
+                    send = true
+                    resp(it, holders[0])
+                }
+            } else {
+                holders.add(it)
+            }
+        }
+        webSocket.addTempEventListener("VOICE_STATE_UPDATE") {
+            if(holders.size == 1) {
+                if(!send) {
+                    send = true
+                    resp(holders[0], it)
+                }
+            } else {
+                holders.add(it)
+            }
+        }
+        webSocket.sendMessage(OpCode.VOICE_STATE_UPDATE, obj)
+    }
     fun getSelf(): JSONObject {
         val response = request("/users/@me")
         return JSONObject(response.data)

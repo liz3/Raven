@@ -196,7 +196,7 @@ class Manager(val stage: Stage) {
     fun renderServerChannels(server: Server): TreeItem<Any> {
         val root = TreeItem<Any>("<- Back to server list")
         root.isExpanded = true
-        server.channels.filter { th -> th.type == ChannelType.GUILD_TEXT.num && (th.obj.isNull("parent_id")) }
+        server.channels.filter { th -> (th.obj.isNull("parent_id")) }
             .sortedBy { x -> x.obj.getInt("position") }.forEach { cCh ->
                 root.children.add(TreeItem(cCh.guiObj))
             }
@@ -208,7 +208,7 @@ class Manager(val stage: Stage) {
                     cCh.obj.has("parent_id") && cCh.obj.get("parent_id") is String && cCh.obj.get(
                         "parent_id"
                     ) == ch.id
-                }.filter { cCh -> cCh.type == ChannelType.GUILD_TEXT.num }.forEach { cCh ->
+                }.forEach { cCh ->
                     item.children.add(TreeItem(cCh.guiObj))
                 }
                 root.children.add(item)
@@ -267,6 +267,9 @@ class Manager(val stage: Stage) {
                     val channel = (item.value as GuiServerChannel).privateChat
                     if (channel.type == 0) {
                         loadChat(channel)
+                    }
+                    if(channel.type == ChannelType.GUILD_VOICE.num) {
+                        coreManager.audioManager.loadChannel(channel)
                     }
                 }
             }

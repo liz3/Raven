@@ -38,7 +38,25 @@ public class IOUtils {
         arr[offset + 2] = (byte) ((it >>> 8)  & 0xFF);
         arr[offset + 3] = (byte) ( it         & 0xFF);
     }
+    public static byte[] getAudioData(short[] decoded, double volume)
+    {
+        if (decoded == null)
+            throw new IllegalArgumentException("Cannot get audio data from null");
+        int byteIndex = 0;
+        byte[] audio = new byte[decoded.length * 2];
+        for (short s : decoded)
+        {
+            if (volume != 1.0)
+                s = (short) (s * volume);
 
+            byte leftByte  = (byte) ((s >>> 8) & 0xFF);
+            byte rightByte = (byte)  (s        & 0xFF);
+            audio[byteIndex] = leftByte;
+            audio[byteIndex + 1] = rightByte;
+            byteIndex += 2;
+        }
+        return audio;
+    }
     public static ByteBuffer reallocate(ByteBuffer original, int length)
     {
         ByteBuffer buffer = ByteBuffer.allocate(length);

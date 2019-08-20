@@ -2,6 +2,7 @@ package com.savagellc.raven.core.audio.utils
 
 import com.savagellc.raven.IOUtils
 import com.savagellc.raven.TweetNaclFast
+import java.nio.Buffer
 import java.nio.ByteBuffer
 
 class NetworkTranslate(private val secretKey:ByteArray, val ssrc:Int) {
@@ -29,9 +30,15 @@ class NetworkTranslate(private val secretKey:ByteArray, val ssrc:Int) {
         wrapped.flip()
         return fBuff
     }
-    fun decodePacket(buffer: ByteBuffer): ByteBuffer {
-        val data = buffer.array()
+    fun decodePacket(rawPacket: ByteArray): ByteBuffer {
+        val buffer = ByteBuffer.wrap(rawPacket)
+        val sq = buffer.getChar(2)
+        val timestamp = buffer.getInt(4)
+        val ssrc = buffer.getInt(8)
+        val type = buffer.get(1)
+
         val profile = buffer.get(0)
+        val data = buffer.array()
         val hasExtension = IOUtils.hasExtension(profile)
         val cc = IOUtils.getCc(profile)
         val csrcLength = cc * 4
@@ -41,12 +48,12 @@ class NetworkTranslate(private val secretKey:ByteArray, val ssrc:Int) {
             offset = NetworkStatic.getPayloadOffset(data, csrcLength)
         val encodedAudio = ByteBuffer.allocate(data.size - offset)
         encodedAudio.put(data, offset, encodedAudio.capacity())
-        encodedAudio.flip()
-        val offset2 = encodedAudio.arrayOffset() + encodedAudio.position()
+        (encodedAudio as Buffer).flip()
         val length = encodedAudio.remaining()
+        val offset2 = encodedAudio.arrayOffset() + encodedAudio.position()
         val nonceBuff = NetworkStatic.getNoncePadded(data)
         val decoded = ByteBuffer.wrap(box.open(encodedAudio.array(), offset2, length, nonceBuff))
-        decoded.flip()
+        (decoded as Buffer).flip()
         return decoded
     }
 }

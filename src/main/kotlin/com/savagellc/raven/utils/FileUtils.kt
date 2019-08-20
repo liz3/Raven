@@ -40,10 +40,26 @@ fun readFile(file: File): Pair<FileReturnResult, String> {
 
 
         val array = Files.readAllBytes(file.toPath())
-        Pair(FileReturnResult.SUCCESS, String(array, Charset.forName("UTF-8")))
+        Pair(FileReturnResult.SUCCESS, String(array))
     } catch (e: Exception) {
         e.printStackTrace()
         Pair(FileReturnResult.ERROR, "")
+
+    }
+}
+fun readFileBinary(file: File): Pair<FileReturnResult, ByteArray> {
+
+    if (!file.exists()) return Pair(FileReturnResult.NOT_FOUND, ByteArray(0))
+
+    if (file.isDirectory) return Pair(FileReturnResult.IS_DIR, ByteArray(0))
+    return try {
+
+
+        val array = Files.readAllBytes(file.toPath())
+        Pair(FileReturnResult.SUCCESS, array)
+    } catch (e: Exception) {
+        e.printStackTrace()
+        Pair(FileReturnResult.ERROR, ByteArray(0))
 
     }
 }

@@ -1,5 +1,7 @@
 package com.savagellc.raven.core.audio.utils
 
+import com.savagellc.raven.IOUtils
+import com.savagellc.raven.utils.writeFile
 import tomp2p.opuswrapper.Opus
 import java.nio.ByteBuffer
 import java.nio.IntBuffer
@@ -9,7 +11,7 @@ import javax.sound.sampled.AudioSystem
 class PlayBack {
 
     private val audioOutput = AudioSystem.getSourceDataLine(AudioStatic.playFormat)
-    private val decError = IntBuffer.allocate(4)
+    private val decError = IntBuffer.allocate(1)
     private val opusDecoder = Opus.INSTANCE.opus_decoder_create(AudioStatic.SAMPLE_RATE.toInt(), 2, decError)
 
 
@@ -18,21 +20,27 @@ class PlayBack {
             audioOutput.open(AudioStatic.playFormat)
             audioOutput.start()
 
-        }catch(e:Exception) {
+        } catch (e: Exception) {
             e.printStackTrace()
         }
     }
-    fun pushPacket(data:ByteBuffer) {
-        val transferredBytes = data.remainingArray()
-        val pcm = ShortBuffer.allocate(AudioStatic.AUDIO_BUFFER_SIZE)
-        val decoded = Opus.INSTANCE.opus_decode(
-            opusDecoder, transferredBytes, transferredBytes.size,
-            pcm, AudioStatic.SAMPLES_PER_PACKET, 0
+
+    fun pushPacket(encodedAudio: ByteBuffer) {
+        val length = encodedAudio.remaining()
+        val offset = encodedAudio.arrayOffset() + encodedAudio.position()
+        println(offset)
+        val decoded = ShortBuffer.allocate(4096)
+        val buf = ByteArray(length)
+        val data = encodedAudio.array()
+        println(data.take(125).map { it }.joinToString(","))
+        System.arraycopy(data, offset, buf, 0, length)
+        val result = Opus.INSTANCE.opus_decode(
+            opusDecoder, buf, buf.size,
+            decoded, AudioStatic.SAMPLES_PER_PACKET, 0
         )
-        println(decoded)
-        pcm.position(decoded)
-        pcm.flip()
-        val audio = AudioStatic.pcmToAudio(pcm)
-        audioOutput.write(audio, 0, audio.size)
+        val audio = ShortArray(result * 2)
+        decoded.get(audio)
+        val converted = IOUtils.getAudioData(audio, 1.0)
+        audioOutput.write(converted, 0, converted.size)
     }
 }

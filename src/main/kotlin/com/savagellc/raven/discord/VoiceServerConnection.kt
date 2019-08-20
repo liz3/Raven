@@ -31,14 +31,14 @@ class VoiceServerConnection(
         return Pair(selfIp, port)
     }
 
-    fun receivePacks(cb: (ByteBuffer) -> Unit) {
+    fun receivePacks(cb: (ByteArray) -> Unit) {
         val thread = Thread {
 
             while (true) {
                 try {
-                    val packet = DatagramPacket(ByteArray(1024), 1024)
+                    val packet = DatagramPacket(ByteArray(1920), 1920)
                     socketServer.receive(packet)
-                    cb(ByteBuffer.wrap(packet.data.copyOf(packet.length)))
+                    cb(packet.data.copyOf(packet.length))
                 } catch (e: Exception) {
                     e.printStackTrace()
                 }

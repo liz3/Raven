@@ -8,6 +8,7 @@ import com.savagellc.raven.discord.VoiceServerConnection
 import com.savagellc.raven.include.Channel
 import com.savagellc.raven.include.PrivateChat
 import com.savagellc.raven.include.ServerChannel
+import com.savagellc.raven.utils.writeFile
 import org.json.JSONArray
 import org.json.JSONObject
 import java.nio.ByteBuffer
@@ -70,6 +71,7 @@ class AudioManager(val coreManager: CoreManager) {
                 voiceServer.startHeartBeat(sock.heart_beat_interval)
                 voiceServer.receivePacks {
                     val translated = networkTranslate.decodePacket(it)
+                    writeFile(translated.array(), "out.wav", true, true)
                     println("Playing packet")
                     playBack.pushPacket(translated)
                 }

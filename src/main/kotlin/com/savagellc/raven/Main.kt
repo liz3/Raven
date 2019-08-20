@@ -10,5 +10,5 @@ object Data {
 }
 
 fun main(args: Array<String>) {
-    JavaFxBootstrapper.bootstrap()
+     JavaFxBootstrapper.bootstrap()
 }

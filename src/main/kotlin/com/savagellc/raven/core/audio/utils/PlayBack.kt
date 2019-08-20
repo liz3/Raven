@@ -29,6 +29,7 @@ class PlayBack {
             opusDecoder, transferredBytes, transferredBytes.size,
             pcm, AudioStatic.SAMPLES_PER_PACKET, 0
         )
+        println(decoded)
         pcm.position(decoded)
         pcm.flip()
         val audio = AudioStatic.pcmToAudio(pcm)

@@ -285,15 +285,15 @@ class RavenVoiceWebSocket(val targetUrl:String, val sessionId:String,  val token
     }
 
     fun onMessage(raw: JSONObject) {
+        println(raw)
         requests++
-
-
         val code = raw.getInt("op")
         if (api.hasDebugger) api.debugger.pushSockDown(code, raw)
         when (code) {
-            2 -> {
+            2,4 -> {
                 val message = raw.getJSONObject("d")
-                val type = if(code == 2) "READY" else "GENERIC"
+                val type = if(code == 2) "READY" else if(code == 4) "SESSION_DEP" else "GENERIC"
+
                 eventListeners.forEach {
                     if (it.first == type) it.second(message)
                 }

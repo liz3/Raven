@@ -2,6 +2,7 @@ package com.savagellc.raven.discord
 
 import com.savagellc.raven.IOUtils
 import com.savagellc.raven.core.audio.AudioManager
+import com.savagellc.raven.core.audio.utils.NetworkStatic
 import java.net.DatagramSocket
 import java.nio.ByteBuffer
 import java.net.DatagramPacket
@@ -28,16 +29,48 @@ class VoiceServerConnection(
 
         return Pair(selfIp, port)
     }
-    fun sendPacket(buff:ByteBuffer) {
+
+    fun receivePacks(cb: (ByteBuffer) -> Unit) {
+        val thread = Thread {
+            socketServer.soTimeout = 1000
+            while (true) {
+                try {
+                    val packet = DatagramPacket(ByteArray(1920), 1920)
+                    println("Received packet")
+                    socketServer.receive(packet)
+                    cb(ByteBuffer.wrap(packet.data))
+                } catch (e: Exception) {
+                    println("Timeout")
+                }
+            }
+        }
+        thread.name = "Voice Server receive thread"
+        thread.start()
+    }
+
+    fun startHeartBeat(interval: Long) {
+        Thread {
+            while (!Thread.currentThread().isInterrupted) {
+                println("sending udp keepalive")
+                val pack = DatagramPacket(NetworkStatic.UDP_KEEP_ALIVE, NetworkStatic.UDP_KEEP_ALIVE.size, tAddress);
+                socketServer.send(pack)
+                Thread.sleep(interval)
+            }
+        }.start()
+    }
+
+    fun sendPacket(buff: ByteBuffer) {
         val data = buff.array()
         val packet = DatagramPacket(data, data.size, tAddress)
         socketServer.send(packet)
     }
+
     private fun getDiscoveryPacket(): DatagramPacket {
         val buff = ByteBuffer.allocate(70)
         buff.putInt(ssrc)
         return DatagramPacket(buff.array(), buff.array().size, tAddress);
     }
+
     private fun receiveDiscoveryPacket(): ByteArray {
         val pack = DatagramPacket(ByteArray(70), 70)
         socketServer.receive(pack)

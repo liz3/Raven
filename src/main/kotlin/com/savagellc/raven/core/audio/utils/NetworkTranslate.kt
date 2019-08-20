@@ -4,9 +4,9 @@ import com.codahale.xsalsa20poly1305.SecretBox
 import java.nio.ByteBuffer
 
 class NetworkTranslate(private val secretKey:ByteArray, val ssrc:Int) {
-    var timestamp = 0
+    private var timestamp = 0
     var seq = 0;
-    val box = SecretBox(secretKey)
+    private val box = SecretBox(secretKey)
 
     fun preparePacket(buffer: ByteBuffer): ByteBuffer {
         timestamp += AudioStatic.SAMPLES_PER_PACKET
@@ -27,5 +27,17 @@ class NetworkTranslate(private val secretKey:ByteArray, val ssrc:Int) {
         fBuff.put(wrapped)
         wrapped.flip()
         return fBuff
+    }
+    fun decodePacket(buffer: ByteBuffer): ByteBuffer {
+        val nonceBuff = ByteBuffer.allocate(NetworkStatic.PACKET_PADDING)
+        nonceBuff.put(0x80.toByte()) // type
+        nonceBuff.put(0x78.toByte()) // version
+        nonceBuff.putChar(buffer.getChar(2)) // sequence
+        nonceBuff.putInt(buffer.getInt(4)) // timestamp
+        nonceBuff.putInt(buffer.getInt(8)) // SSRC
+        val encodedBuff = ByteArray(buffer.array().size - 12)
+        buffer.get(encodedBuff, 12, encodedBuff.size)
+        val audioBuff = box.open(nonceBuff.array(), encodedBuff)
+        return ByteBuffer.wrap(audioBuff.get())
     }
 }

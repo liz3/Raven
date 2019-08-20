@@ -10,6 +10,7 @@ import com.savagellc.raven.include.ServerChannel
 import javafx.application.Platform
 import javafx.embed.swing.SwingFXUtils
 import javafx.fxml.FXMLLoader
+import javafx.scene.control.Button
 import javafx.scene.image.Image
 import javafx.scene.layout.AnchorPane
 import javafx.scene.layout.VBox
@@ -55,6 +56,7 @@ class InfoViewManager(val guiManager: Manager) {
     private fun loadDmChannel(channel: PrivateChat) {
         Platform.runLater {
             dmController.infoContainer.children.clear()
+
             rootPane.children.clear()
             if (channel.isDm) {
                 dmController.infoContainer.children.add(
@@ -65,6 +67,11 @@ class InfoViewManager(val guiManager: Manager) {
                         ) guiManager.coreManager.presenceManager.onlineStatus[channel.userObject.getString("id")]!!.fName else ""}"
                     )
                 )
+                val btn = Button("Call")
+                btn.setOnAction {
+                    guiManager.coreManager.audioManager.loadDmChannel(channel)
+                }
+                dmController.infoContainer.children.add(btn)
             }
             dmController.userNameLabel.text = {
                 if (channel.obj.has("name") && channel.obj.get("name") is String)
@@ -92,6 +99,7 @@ class InfoViewManager(val guiManager: Manager) {
                     )}"
                 )
             }
+
             rootPane.children.add(dmPane)
         }
     }

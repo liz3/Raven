@@ -4,6 +4,7 @@ import com.neovisionaries.ws.client.WebSocket
 import com.neovisionaries.ws.client.WebSocketAdapter
 import com.neovisionaries.ws.client.WebSocketFactory
 import com.savagellc.raven.IntUtils
+import com.savagellc.raven.include.Channel
 import com.savagellc.raven.include.Me
 import com.savagellc.raven.include.ServerChannel
 import org.json.JSONArray
@@ -29,6 +30,7 @@ enum class OpCode(val num: Int) {
     HEARTBEAT_ACK(11),
     CHANNEL_SWITCH(13)
 }
+
 class RavenWebSocket(val token: String, val api: Api) {
     lateinit var websocket: WebSocket
     val zlibContext = Inflater()
@@ -52,6 +54,7 @@ class RavenWebSocket(val token: String, val api: Api) {
     fun addEventListener(name: String, cb: (JSONObject) -> Unit) {
         eventListeners.add(Pair(name, cb))
     }
+
     fun addTempEventListener(name: String, cb: (JSONObject) -> Unit) {
         tempListener.add(Pair(name, cb))
     }
@@ -159,7 +162,7 @@ class RavenWebSocket(val token: String, val api: Api) {
                 eventListeners.forEach {
                     if (it.first == type) it.second(message)
                 }
-                val toRemove =  Vector<Pair<String, (JSONObject) -> Unit>>()
+                val toRemove = Vector<Pair<String, (JSONObject) -> Unit>>()
                 tempListener.filter { it.first == type }.forEach {
                     it.second(message)
                     toRemove.add(it)
@@ -175,18 +178,26 @@ class RavenWebSocket(val token: String, val api: Api) {
         }
     }
 }
-class RavenVoiceWebSocket(val targetUrl:String, val sessionId:String,  val token: String, val api: Api, val me:Me, val channel: ServerChannel) {
+
+class RavenVoiceWebSocket(
+    val targetUrl: String,
+    val sessionId: String,
+    val token: String,
+    val api: Api,
+    val me: Me,
+    val channel: Channel
+) {
     lateinit var websocket: WebSocket
     val zlibContext = Inflater()
     private val eventListeners = Vector<Pair<String, (JSONObject) -> Unit>>()
     private val tempListener = Vector<Pair<String, (JSONObject) -> Unit>>()
-    private var heart_beat_interval = 0L
+     var heart_beat_interval = 0L
     var disposed = false
     var requests = 0
     var readBuffer: ByteArrayOutputStream? = null
     var heartbeatThread = Thread {
         while (heart_beat_interval != 0L && !disposed) {
-            sendMessage(1, requests)
+            sendMessage(1, System.currentTimeMillis())
             try {
                 Thread.sleep(heart_beat_interval)
             } catch (e: Exception) {
@@ -198,6 +209,7 @@ class RavenVoiceWebSocket(val targetUrl:String, val sessionId:String,  val token
     fun addEventListener(name: String, cb: (JSONObject) -> Unit) {
         eventListeners.add(Pair(name, cb))
     }
+
     fun addTempEventListener(name: String, cb: (JSONObject) -> Unit) {
         tempListener.add(Pair(name, cb))
     }
@@ -210,9 +222,7 @@ class RavenVoiceWebSocket(val targetUrl:String, val sessionId:String,  val token
         val obj = JSONObject()
         obj.put("op", code)
         obj.put("d", data)
-     //   if (api.hasDebugger) api.debugger.pushSockUp(code, data)
-
-
+        //   if (api.hasDebugger) api.debugger.pushSockUp(code, data)
         websocket.sendText(obj.toString())
 
     }
@@ -274,13 +284,19 @@ class RavenVoiceWebSocket(val targetUrl:String, val sessionId:String,  val token
         websocket.connect()
     }
 
-     fun handleAuthenticate() {
+    fun handleAuthenticate() {
 
         val obj = JSONObject()
-        obj.put("token", token)
-            .put("server_id", channel.server.id)
-            .put("user_id", me.id)
-            .put("session_id", sessionId)
+        if (channel is ServerChannel) {
+            obj.put("token", token)
+                .put("server_id", channel.server.id)
+                .put("user_id", me.id)
+                .put("session_id", sessionId)
+        } else {
+            obj.put("token", token)
+                .put("user_id", me.id)
+                .put("session_id", sessionId)
+        }
         sendMessage(0, obj)
     }
 
@@ -290,14 +306,14 @@ class RavenVoiceWebSocket(val targetUrl:String, val sessionId:String,  val token
         val code = raw.getInt("op")
         if (api.hasDebugger) api.debugger.pushSockDown(code, raw)
         when (code) {
-            2,4 -> {
+            2, 4 -> {
                 val message = raw.getJSONObject("d")
-                val type = if(code == 2) "READY" else if(code == 4) "SESSION_DEP" else "GENERIC"
+                val type = if (code == 2) "READY" else if (code == 4) "SESSION_DEP" else "GENERIC"
 
                 eventListeners.forEach {
                     if (it.first == type) it.second(message)
                 }
-                val toRemove =  Vector<Pair<String, (JSONObject) -> Unit>>()
+                val toRemove = Vector<Pair<String, (JSONObject) -> Unit>>()
                 tempListener.filter { it.first == type }.forEach {
                     it.second(message)
                     toRemove.add(it)

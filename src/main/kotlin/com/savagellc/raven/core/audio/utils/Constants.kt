@@ -65,6 +65,6 @@ object AudioStatic {
 
 object NetworkStatic {
     const val PACKET_PADDING = 24
-
+    val UDP_KEEP_ALIVE = byteArrayOf(0xC9.toByte(), 0, 0, 0, 0, 0, 0, 0, 0)
 
 }

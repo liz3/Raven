@@ -199,6 +199,32 @@ class Api(private val token: String, holdConnect: Boolean = false) {
         }
         webSocket.sendMessage(OpCode.VOICE_STATE_UPDATE, obj)
     }
+    fun connectToVoice(channelId:String, resp: (JSONObject, JSONObject) -> Unit) {
+        val obj = JSONObject().put("guild_id", JSONObject.NULL).put("channel_id", channelId).put("self_mute", false).put("self_deaf", false).put("self_video", false)
+        val holders = Vector<JSONObject>()
+        var send = false
+        webSocket.addTempEventListener("VOICE_SERVER_UPDATE") {
+            if(holders.size == 1) {
+                if(!send) {
+                    send = true
+                    resp(it, holders[0])
+                }
+            } else {
+                holders.add(it)
+            }
+        }
+        webSocket.addTempEventListener("VOICE_STATE_UPDATE") {
+            if(holders.size == 1) {
+                if(!send) {
+                    send = true
+                    resp(holders[0], it)
+                }
+            } else {
+                holders.add(it)
+            }
+        }
+        webSocket.sendMessage(OpCode.VOICE_STATE_UPDATE, obj)
+    }
     fun getSelf(): JSONObject {
         val response = request("/users/@me")
         return JSONObject(response.data)

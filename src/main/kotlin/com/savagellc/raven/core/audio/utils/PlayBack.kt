@@ -8,14 +8,14 @@ import javax.sound.sampled.AudioSystem
 
 class PlayBack {
 
-    private val audioOutput = AudioSystem.getSourceDataLine(AudioStatic.format)
+    private val audioOutput = AudioSystem.getSourceDataLine(AudioStatic.playFormat)
     private val decError = IntBuffer.allocate(4)
-    private val opusDecoder = Opus.INSTANCE.opus_decoder_create(AudioStatic.SAMPLE_RATE.toInt(), 1, decError)
+    private val opusDecoder = Opus.INSTANCE.opus_decoder_create(AudioStatic.SAMPLE_RATE.toInt(), 2, decError)
 
 
     fun start() {
         try {
-            audioOutput.open(AudioStatic.format)
+            audioOutput.open(AudioStatic.playFormat)
             audioOutput.start()
 
         }catch(e:Exception) {
@@ -23,10 +23,10 @@ class PlayBack {
         }
     }
     fun pushPacket(data:ByteBuffer) {
-        val asArr = data.array()
-        val pcm = ShortBuffer.allocate(1920 - 12)
+        val transferredBytes = data.remainingArray()
+        val pcm = ShortBuffer.allocate(AudioStatic.AUDIO_BUFFER_SIZE)
         val decoded = Opus.INSTANCE.opus_decode(
-            opusDecoder, asArr, asArr.size,
+            opusDecoder, transferredBytes, transferredBytes.size,
             pcm, AudioStatic.SAMPLES_PER_PACKET, 0
         )
         pcm.position(decoded)

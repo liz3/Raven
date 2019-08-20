@@ -1,12 +1,18 @@
 package com.savagellc.raven.core.audio.utils
 
 import com.codahale.xsalsa20poly1305.SecretBox
+import com.savagellc.raven.IOUtils
 import java.nio.ByteBuffer
 import java.nio.ShortBuffer
 import java.sql.Timestamp
 import javax.sound.sampled.AudioFormat
 import kotlin.math.sqrt
 
+fun ByteBuffer.remainingArray(): ByteArray {
+    val array = ByteArray(remaining())
+    get(array)
+    return array
+}
 object AudioStatic {
     const val SAMPLE_RATE = 48000.0f
     const val SAMPLES_PER_PACKET = 960 // 20ms at 48kHz
@@ -15,12 +21,7 @@ object AudioStatic {
     const val ACTIVATION_THRESHOLD = 20.0
     const val DEACTIVATION_DELAY = 200
     val format = AudioFormat(SAMPLE_RATE, 16, 1, true, true)
-
-    fun ByteBuffer.remainingArray(): ByteArray {
-        val array = ByteArray(remaining())
-        get(array)
-        return array
-    }
+    val playFormat = AudioFormat(SAMPLE_RATE, 16, 2, true, true)
 
     fun audioToPCM(rawAudioData: ByteArray): ShortBuffer {
         val pcm = ShortBuffer.allocate(rawAudioData.size / 2)
@@ -66,5 +67,23 @@ object AudioStatic {
 object NetworkStatic {
     const val PACKET_PADDING = 24
     val UDP_KEEP_ALIVE = byteArrayOf(0xC9.toByte(), 0, 0, 0, 0, 0, 0, 0, 0)
+    val RTP_DISCORD_EXTENSION = 0xBEDE.toShort()
+
+     fun getPayloadOffset(data:ByteArray, csrcLength:Int): Int {
+        val headerLength:Short = IOUtils.getShortBigEndian(data, 12 + 2 + csrcLength);
+        var i = 12
+                + 4
+        + csrcLength
+        + headerLength * 4;
+
+        while (data[i] == 0.toByte())
+            i++;
+        return i;
+    }
+    fun getNoncePadded(pack:ByteArray): ByteArray {
+        val nonce = ByteArray(24)
+        System.arraycopy(pack, 0, nonce, 0, 12);
+        return nonce
+    }
 
 }

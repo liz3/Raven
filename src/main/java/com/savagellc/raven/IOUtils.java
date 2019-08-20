@@ -9,6 +9,12 @@ public class IOUtils {
         return (short) ((arr[offset    ] & 0xff) << 8
                 | arr[offset + 1] & 0xff);
     }
+    public static boolean hasExtension(byte profile) {
+        return (profile & 0x10) != 0;
+    }
+    public static byte getCc(byte profile) {
+        return (byte) (profile & 0x0f);
+    }
 
     public static short getShortLittleEndian(byte[] arr, int offset)
     {

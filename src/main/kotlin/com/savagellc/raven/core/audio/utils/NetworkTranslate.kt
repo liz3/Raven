@@ -1,6 +1,7 @@
 package com.savagellc.raven.core.audio.utils
 
 import com.codahale.xsalsa20poly1305.SecretBox
+import com.savagellc.raven.IOUtils
 import java.nio.ByteBuffer
 
 class NetworkTranslate(private val secretKey:ByteArray, val ssrc:Int) {
@@ -29,15 +30,21 @@ class NetworkTranslate(private val secretKey:ByteArray, val ssrc:Int) {
         return fBuff
     }
     fun decodePacket(buffer: ByteBuffer): ByteBuffer {
-        val nonceBuff = ByteBuffer.allocate(NetworkStatic.PACKET_PADDING)
-        nonceBuff.put(0x80.toByte()) // type
-        nonceBuff.put(0x78.toByte()) // version
-        nonceBuff.putChar(buffer.getChar(2)) // sequence
-        nonceBuff.putInt(buffer.getInt(4)) // timestamp
-        nonceBuff.putInt(buffer.getInt(8)) // SSRC
-        val encodedBuff = ByteArray(buffer.array().size - 12)
-        buffer.get(encodedBuff, 12, encodedBuff.size)
-        val audioBuff = box.open(nonceBuff.array(), encodedBuff)
-        return ByteBuffer.wrap(audioBuff.get())
+        val data = buffer.array()
+        val profile = buffer.get(0)
+        val hasExtension = IOUtils.hasExtension(profile)
+        val cc = IOUtils.getCc(profile)
+        val csrcLength = cc * 4
+        val extension = if(hasExtension) IOUtils.getShortBigEndian(data, 12 + csrcLength) else 0
+        var offset = 12 + csrcLength
+        if(hasExtension && extension == NetworkStatic.RTP_DISCORD_EXTENSION)
+            offset = NetworkStatic.getPayloadOffset(data, csrcLength)
+        val encodedAudio = ByteBuffer.allocate(data.size - offset)
+        encodedAudio.put(data, offset, encodedAudio.capacity())
+        encodedAudio.flip()
+        val nonceBuff = NetworkStatic.getNoncePadded(data)
+        val decoded = ByteBuffer.wrap(box.open(nonceBuff, encodedAudio.array()).get())
+        decoded.flip()
+        return decoded
     }
 }

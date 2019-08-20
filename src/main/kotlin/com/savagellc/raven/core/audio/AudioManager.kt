@@ -2,10 +2,7 @@ package com.savagellc.raven.core.audio
 
 import club.minnced.opus.util.OpusLibrary
 import com.savagellc.raven.core.CoreManager
-import com.savagellc.raven.core.audio.utils.NetworkTranslate
-import com.savagellc.raven.core.audio.utils.PlayBack
-import com.savagellc.raven.core.audio.utils.Recorder
-import com.savagellc.raven.core.audio.utils.RecorderAction
+import com.savagellc.raven.core.audio.utils.*
 import com.savagellc.raven.discord.RavenVoiceWebSocket
 import com.savagellc.raven.discord.VoiceServerConnection
 import com.savagellc.raven.include.Channel
@@ -60,7 +57,7 @@ class AudioManager(val coreManager: CoreManager) {
                             sock.sendMessage(5, JSONObject().put("speaking", false).put("delay", 0).put("ssrc", ssrc))
                         }
                         RecorderAction.PACK -> {
-                            println("sending PACKET")
+
                             val pack = data as ByteBuffer
                             val translated = networkTranslate.preparePacket(pack)
                             voiceServer.sendPacket(translated)
@@ -68,11 +65,12 @@ class AudioManager(val coreManager: CoreManager) {
                     }
                 }
                 playBack = PlayBack()
-                //   recorder.start()
+                recorder.start()
                 playBack.start()
                 voiceServer.startHeartBeat(sock.heart_beat_interval)
                 voiceServer.receivePacks {
                     val translated = networkTranslate.decodePacket(it)
+                    println("Playing packet")
                     playBack.pushPacket(translated)
                 }
                 println("Starting recording")

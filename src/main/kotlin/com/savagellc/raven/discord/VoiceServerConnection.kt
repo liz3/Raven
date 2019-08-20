@@ -7,6 +7,7 @@ import java.net.DatagramSocket
 import java.nio.ByteBuffer
 import java.net.DatagramPacket
 import java.net.InetSocketAddress
+import java.util.*
 
 
 class VoiceServerConnection(
@@ -32,15 +33,14 @@ class VoiceServerConnection(
 
     fun receivePacks(cb: (ByteBuffer) -> Unit) {
         val thread = Thread {
-            socketServer.soTimeout = 1000
+
             while (true) {
                 try {
-                    val packet = DatagramPacket(ByteArray(1920), 1920)
-                    println("Received packet")
+                    val packet = DatagramPacket(ByteArray(1024), 1024)
                     socketServer.receive(packet)
-                    cb(ByteBuffer.wrap(packet.data))
+                    cb(ByteBuffer.wrap(packet.data.copyOf(packet.length)))
                 } catch (e: Exception) {
-                    println("Timeout")
+                    e.printStackTrace()
                 }
             }
         }

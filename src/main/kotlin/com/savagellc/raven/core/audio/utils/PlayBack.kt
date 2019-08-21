@@ -28,16 +28,15 @@ class PlayBack {
     fun pushPacket(encodedAudio: ByteBuffer) {
         val length = encodedAudio.remaining()
         val offset = encodedAudio.arrayOffset() + encodedAudio.position()
-        println(offset)
         val decoded = ShortBuffer.allocate(4096)
         val buf = ByteArray(length)
         val data = encodedAudio.array()
-        println(data.take(125).map { it }.joinToString(","))
         System.arraycopy(data, offset, buf, 0, length)
         val result = Opus.INSTANCE.opus_decode(
             opusDecoder, buf, buf.size,
             decoded, AudioStatic.SAMPLES_PER_PACKET, 0
         )
+        decoded.flip()
         val audio = ShortArray(result * 2)
         decoded.get(audio)
         val converted = IOUtils.getAudioData(audio, 1.0)

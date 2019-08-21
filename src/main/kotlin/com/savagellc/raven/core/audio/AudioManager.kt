@@ -31,7 +31,7 @@ class AudioManager(val coreManager: CoreManager) {
             "data",
             JSONObject().put("address", ownTarget.first).put("port", ownTarget.second).put(
                 "mode",
-                "xsalsa20_poly1305"
+                "xsalsa20_poly1305_lite"
             ).put(
                 "codecs",
                 JSONArray().put(

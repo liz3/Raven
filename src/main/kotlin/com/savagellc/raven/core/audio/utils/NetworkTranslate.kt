@@ -45,7 +45,7 @@ class NetworkTranslate(private val secretKey:ByteArray, val ssrc:Int) {
         val timestamp = buffer.getInt(4)
         val ssrc = buffer.getInt(8)
         val type = buffer.get(1)
-
+        println("$ssrc : ${this.ssrc}")
         val profile = buffer.get(0)
         val data = buffer.array()
         val hasExtension = IOUtils.hasExtension(profile)

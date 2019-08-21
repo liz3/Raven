@@ -36,7 +36,6 @@ class PlayBack {
             opusDecoder, buf, buf.size,
             decoded, AudioStatic.SAMPLES_PER_PACKET, 0
         )
-        decoded.flip()
         val audio = ShortArray(result * 2)
         decoded.get(audio)
         val converted = IOUtils.getAudioData(audio, 1.0)

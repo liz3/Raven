@@ -65,8 +65,10 @@ class NetworkTranslate(private val secretKey:ByteArray, val ssrc:Int) {
         val offset2 = encodedAudio.arrayOffset() + encodedAudio.position()
         val decryptedBuff = box.open(encodedAudio.array(), offset2, length, extendedNonce)
         println(decryptedBuff.take(125).map { it }.joinToString(","))
-        val decoded = ByteBuffer.wrap(decryptedBuff)
-        (decoded as Buffer).flip()
+
+        val decoded = ByteBuffer.allocate(decryptedBuff.size - 2) // Discord. Why
+        decoded.put(decryptedBuff, 2, decoded.limit())
+        decoded.flip()
         return decoded
     }
 }

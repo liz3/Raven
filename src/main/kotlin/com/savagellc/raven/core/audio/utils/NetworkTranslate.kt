@@ -23,6 +23,7 @@ class NetworkTranslate(private val secretKey:ByteArray, val ssrc:Int) {
         timestamp += AudioStatic.SAMPLES_PER_PACKET
         IOUtils.setIntBigEndian(nonceBuf, 0, count.toInt())
         val data = rawAudio.array()
+      //  println(data.take(25).joinToString(","))
         val offset = rawAudio.arrayOffset() + rawAudio.position()
         val length = rawAudio.remaining()
         val encryptedAudio = box.box(data, offset, length, nonceBuf)
@@ -61,10 +62,10 @@ class NetworkTranslate(private val secretKey:ByteArray, val ssrc:Int) {
         encodedAudio.put(data, offset, encodedAudio.capacity())
         (encodedAudio as Buffer).flip()
         val length = encodedAudio.remaining() - 4
-        val offset2 = encodedAudio.arrayOffset() + encodedAudio.position()
-        val decryptedBuff = box.open(encodedAudio.array(), offset2, length, extendedNonce) ?: return IncomingAudioPacket(ByteBuffer.allocate(1), ssrc, false)
-        val decoded = ByteBuffer.allocate(decryptedBuff.size - 2) // Discord. Why
-        decoded.put(decryptedBuff, 2, decoded.limit())
+        val decryptedBuff = box.open(encodedAudio.array(), 0, length, extendedNonce) ?: return IncomingAudioPacket(ByteBuffer.allocate(1), ssrc, false)
+       // println(decryptedBuff.take(25).joinToString(","))
+        val decoded = ByteBuffer.allocate(decryptedBuff.size) // Discord. Why
+        decoded.put(decryptedBuff, 0, decoded.limit())
         decoded.flip()
         return IncomingAudioPacket(decoded, ssrc, true)
     }

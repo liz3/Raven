@@ -21,7 +21,7 @@ object AudioStatic {
     const val ACTIVATION_THRESHOLD = 20.0
     const val DEACTIVATION_DELAY = 200
     val format = AudioFormat(SAMPLE_RATE, 16, 1, true, true)
-    val playFormat = AudioFormat(SAMPLE_RATE, 16, 1, true, true)
+    val playFormat = AudioFormat(SAMPLE_RATE, 16, 2, true, true)
 
     fun audioToPCM(rawAudioData: ByteArray): ShortBuffer {
         val pcm = ShortBuffer.allocate(rawAudioData.size / 2)

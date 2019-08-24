@@ -11,7 +11,7 @@ import javax.sound.sampled.AudioSystem
 class PlayBackEngine(val ssrc:Int) {
 
     private val decError = IntBuffer.allocate(1)
-    private val opusDecoder = Opus.INSTANCE.opus_decoder_create(AudioStatic.SAMPLE_RATE.toInt(), 1, decError)
+    private val opusDecoder = Opus.INSTANCE.opus_decoder_create(AudioStatic.SAMPLE_RATE.toInt(), 2, decError)
 
     fun decodePacket(encodedAudio: ByteBuffer): ByteArray {
 

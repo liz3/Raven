@@ -12,6 +12,9 @@ import com.savagellc.raven.utils.writeFile
 import org.json.JSONArray
 import org.json.JSONObject
 import java.nio.ByteBuffer
+import java.util.*
+import java.util.concurrent.Executors
+import kotlin.collections.HashMap
 
 
 class AudioManager(val coreManager: CoreManager) {
@@ -23,6 +26,9 @@ class AudioManager(val coreManager: CoreManager) {
     lateinit var networkTranslate: NetworkTranslate
     lateinit var recorder: Recorder
     lateinit var playBack: PlayBack
+    private val decoders = HashMap<Int, PlayBackEngine>()
+    private val speaking = HashMap<Int, String>()
+    val executor = Executors.newCachedThreadPool()
     private fun handleVoiceConnect() {
         OpusLibrary.loadFromJar()
         voiceServer = VoiceServerConnection(ip, port, ssrc, this)
@@ -42,6 +48,19 @@ class AudioManager(val coreManager: CoreManager) {
                 )
             ).put("port", ownTarget.second).put("address", ownTarget.first)
         )
+        sock.addEventListener("VOICE_STATE_UPDATE") {speakingJson ->
+            val delay = speakingJson.getInt("delay") * 100
+            if(delay == 0) {
+                speaking[speakingJson.getInt("ssrc")] = if (speakingJson.getBoolean("speaking")) "true" else "false"
+            } else {
+                if(speaking.containsKey(speakingJson.getInt("ssrc")) && speaking[speakingJson.getInt("ssrc")] == "pending") return@addEventListener
+                speaking[speakingJson.getInt("ssrc")] = "pending"
+                executor.submit {
+                    Thread.sleep((delay - 120).toLong())
+                    speaking[speakingJson.getInt("ssrc")] = if (speakingJson.getBoolean("speaking")) "true" else "false"
+                }
+            }
+        }
         sock.addTempEventListener("SESSION_DEP") { json ->
             try {
                 val secret = json.getJSONArray("secret_key").map { (it as Int).toByte() }.toByteArray()
@@ -51,14 +70,13 @@ class AudioManager(val coreManager: CoreManager) {
                     when (recorderAction) {
                         RecorderAction.START_REC -> {
                             println("sending RECORD START")
-                            sock.sendMessage(5, JSONObject().put("speaking", true).put("delay", 0).put("ssrc", ssrc))
+                            sock.sendMessage(5, JSONObject().put("speaking", 1).put("delay", 0).put("ssrc", ssrc))
                         }
                         RecorderAction.STOP_REC -> {
                             println("sending RECORD END")
-                            sock.sendMessage(5, JSONObject().put("speaking", false).put("delay", 0).put("ssrc", ssrc))
+                            sock.sendMessage(5, JSONObject().put("speaking", 0).put("delay", 0).put("ssrc", ssrc))
                         }
                         RecorderAction.PACK -> {
-
                             val pack = data as ByteBuffer
                             val translated = networkTranslate.preparePacket(pack)
                             voiceServer.sendPacket(translated)
@@ -71,10 +89,10 @@ class AudioManager(val coreManager: CoreManager) {
                 voiceServer.startHeartBeat(sock.heart_beat_interval)
                 voiceServer.receivePacks {
                     val translated = networkTranslate.decodePacket(it)
-                    writeFile(translated.array(), "out.wav", true, true)
-                    println("Playing packet")
-                    playBack.pushPacket(translated)
+                    //   if(!translated.valid || !speaking.containsKey(translated.ssrc) || speaking[translated.ssrc] != "true") return@receivePacks
+                    playBack.pushPacket(getEngine(translated.ssrc).decodePacket(translated.data))
                 }
+
                 println("Starting recording")
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -84,7 +102,11 @@ class AudioManager(val coreManager: CoreManager) {
         sock.sendMessage(5, JSONObject().put("speaking", 0).put("delay", 0).put("ssrc", ssrc))
         sock.sendMessage(12, JSONObject().put("audio_ssrc", ssrc).put("video_ssrc", 0).put("rtx_ssrc", 0))
     }
-
+    fun getEngine(ssrc:Int): PlayBackEngine {
+        if(decoders.containsKey(ssrc)) return decoders[ssrc]!!
+        decoders[ssrc] = PlayBackEngine(ssrc)
+        return decoders[ssrc]!!
+    }
     private fun handleConnect(
         voiceServerObj: JSONObject,
         voiceStateObj: JSONObject,
@@ -100,7 +122,7 @@ class AudioManager(val coreManager: CoreManager) {
         )
         sock.addTempEventListener("READY") {
             ssrc = it.getInt("ssrc")
-            println(ssrc)
+            println("Own SSRC: $ssrc")
             port = it.getInt("port")
             ip = it.getString("ip")
 

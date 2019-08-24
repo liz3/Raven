@@ -306,9 +306,9 @@ class RavenVoiceWebSocket(
         val code = raw.getInt("op")
         if (api.hasDebugger) api.debugger.pushSockDown(code, raw)
         when (code) {
-            2, 4 -> {
+            2, 4, 5 -> {
                 val message = raw.getJSONObject("d")
-                val type = if (code == 2) "READY" else if (code == 4) "SESSION_DEP" else "GENERIC"
+                val type = if (code == 2) "READY" else if (code == 4) "SESSION_DEP"  else if (code == 5) "VOICE_STATE_UPDATE" else "GENERIC"
 
                 eventListeners.forEach {
                     if (it.first == type) it.second(message)

@@ -2,6 +2,7 @@ package com.savagellc.raven.core.audio.utils
 
 import com.savagellc.raven.IOUtils
 import com.savagellc.raven.TweetNaclFast
+import com.savagellc.raven.core.audio.IncomingAudioPacket
 import java.nio.Buffer
 import java.nio.ByteBuffer
 
@@ -38,14 +39,13 @@ class NetworkTranslate(private val secretKey:ByteArray, val ssrc:Int) {
         (buffer as Buffer).flip()
         return buffer
     }
-    fun decodePacket(rawPacket: ByteArray): ByteBuffer {
+    fun decodePacket(rawPacket: ByteArray): IncomingAudioPacket {
         seq++
         val buffer = ByteBuffer.wrap(rawPacket)
-        val sq = buffer.getChar(2)
-        val timestamp = buffer.getInt(4)
+       // val sq = buffer.getChar(2)
+       // val timestamp = buffer.getInt(4)
         val ssrc = buffer.getInt(8)
-        val type = buffer.get(1)
-        println("$ssrc : ${this.ssrc}")
+       // val type = buffer.get(1)
         val profile = buffer.get(0)
         val data = buffer.array()
         val hasExtension = IOUtils.hasExtension(profile)
@@ -55,7 +55,6 @@ class NetworkTranslate(private val secretKey:ByteArray, val ssrc:Int) {
         var offset = 12 + csrcLength
         if(hasExtension && extension == NetworkStatic.RTP_DISCORD_EXTENSION)
             offset = NetworkStatic.getPayloadOffset(data, csrcLength)
-
         val extendedNonce = ByteArray(24)
         System.arraycopy(rawPacket, rawPacket.size - 4, extendedNonce, 0, 4)
         val encodedAudio = ByteBuffer.allocate(data.size - offset)
@@ -63,12 +62,10 @@ class NetworkTranslate(private val secretKey:ByteArray, val ssrc:Int) {
         (encodedAudio as Buffer).flip()
         val length = encodedAudio.remaining() - 4
         val offset2 = encodedAudio.arrayOffset() + encodedAudio.position()
-        val decryptedBuff = box.open(encodedAudio.array(), offset2, length, extendedNonce)
-        println(decryptedBuff.take(125).map { it }.joinToString(","))
-
+        val decryptedBuff = box.open(encodedAudio.array(), offset2, length, extendedNonce) ?: return IncomingAudioPacket(ByteBuffer.allocate(1), ssrc, false)
         val decoded = ByteBuffer.allocate(decryptedBuff.size - 2) // Discord. Why
         decoded.put(decryptedBuff, 2, decoded.limit())
         decoded.flip()
-        return decoded
+        return IncomingAudioPacket(decoded, ssrc, true)
     }
 }

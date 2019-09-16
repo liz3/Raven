@@ -1,13 +1,12 @@
 package com.savagellc.raven.gui
 
 import com.savagellc.raven.core.CoreManager
+import com.savagellc.raven.include.Channel
 import com.savagellc.raven.include.GuiMessage
 import com.savagellc.raven.include.Server
+import com.savagellc.raven.tasks.CopyChannelTask
 import javafx.application.Platform
-import javafx.scene.control.ContextMenu
-import javafx.scene.control.ListView
-import javafx.scene.control.Menu
-import javafx.scene.control.MenuItem
+import javafx.scene.control.*
 import javafx.scene.layout.HBox
 
 object MessageMenu {
@@ -94,5 +93,31 @@ object ServerMenu {
             menu.show(list, x, y)
             visible = true
         }
+    }
+}
+
+object ChannelMenu {
+
+    fun getMenu(
+        channel: Channel,
+        coreManager: CoreManager
+    ): ContextMenu {
+
+        val menu = ContextMenu()
+
+        val copyChannel = Menu("Copy Channel")
+        menu.setOnShowing {
+            copyChannel.items.clear()
+            for (otherChannel in coreManager.guiManager.openChats.values.filter { it.channel != channel }) {
+                val item = MenuItem(otherChannel.guiTab.text)
+                item.setOnAction {
+                    CopyChannelTask(coreManager).copy(channel, otherChannel.channel)
+                }
+                copyChannel.items.add(item)
+            }
+        }
+        menu.items.add(copyChannel)
+
+        return menu
     }
 }

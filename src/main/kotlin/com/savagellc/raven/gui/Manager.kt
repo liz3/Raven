@@ -176,6 +176,7 @@ class Manager(val stage: Stage) {
         Platform.runLater {
             val tab =
                 Tab(if (channel is PrivateChat) channel.guiObj.toString() else (channel as ServerChannel).guiObj.toString())
+            tab.contextMenu = ChannelMenu.getMenu(channel, coreManager)
             val obj = OpenTab(coreManager, channel, controller, tab)
             tab.setOnClosed {
                 openChats.remove(channel.id)

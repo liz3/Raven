@@ -17,8 +17,10 @@ open class Channel(val rootObject: JSONObject) {
     fun populateDataFromArray(data: JSONArray, coreManager: CoreManager) {
         messages.clear()
         loaded = true
+
         data.reversed().forEach {
             it as JSONObject
+            println(it)
             messages.add(
                 GuiMessage(
                     it, coreManager, guiReference
